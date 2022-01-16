@@ -1,14 +1,12 @@
 <script>
-  "use strict";
+  import { onMount } from "svelte";
 
   // Change to false if you don't want a timer
-  const showTimer = true;
-
-  // Set timer countdown time here in minutes : seconds format
-  const time = "1:00";
-
+  export let showTimer = true;
+  export let time = "1:00";
   // Add list of names here
-  var namesList = [
+
+  export let namesList = [
     "Adam",
     "Adrian",
     "Carson",
@@ -32,26 +30,6 @@
   let i = 0;
   let x = 0;
   let intervalHandle = null;
-  const startButton = document.getElementById("startButton");
-  const shuffleButton = document.getElementById("shuffleButton");
-  const nextButton = document.getElementById("nextButton");
-  const skipButton = document.getElementById("skipButton");
-  const headerOne = document.getElementById("headerNames");
-  const nextName = document.getElementById("previewName");
-  const timerWrapper = document.getElementById("timerWrapper");
-  const timer = document.getElementById("timer");
-
-  // Optional countdown timer
-  // Add zero in front of numbers < 10
-  function checkSecond(sec) {
-    if (sec < 10 && sec >= 0) {
-      sec = "0" + sec;
-    }
-    if (sec < 0) {
-      sec = "59";
-    }
-    return sec;
-  }
 
   function shuffle(array) {
     let currentIndex = array.length,
@@ -73,82 +51,106 @@
     return array;
   }
 
-  function next() {
-    if (timer.innerHTML === "Over time!") {
-      startTimer();
+
+  onMount(() => {
+    const startButton = document.getElementById("startButton");
+    const shuffleButton = document.getElementById("shuffleButton");
+    const nextButton = document.getElementById("nextButton");
+    const skipButton = document.getElementById("skipButton");
+    const headerOne = document.getElementById("headerNames");
+    const nextName = document.getElementById("previewName");
+    const timerWrapper = document.getElementById("timerWrapper");
+    const timer = document.getElementById("timer");
+
+    // Optional countdown timer
+    // Add zero in front of numbers < 10
+    function checkSecond(sec) {
+      if (sec < 10 && sec >= 0) {
+        sec = "0" + sec;
+      }
+      if (sec < 0) {
+        sec = "59";
+      }
+      return sec;
     }
-    timer.innerHTML = time;
-    if (i == namesList.length - 1) {
-      skipButton.style.display = "none";
-      nextButton.style.display = "none";
-      startButton.style.display = "inline-block";
-      shuffleButton.style.display = "inline-block";
-      startButton.innerHTML = "Restart";
-      nextName.textContent = "";
-      // nextName.textContent = namesList[0];
-      headerNames.textContent = "Done!";
-      timerWrapper.classList.remove("visible");
-      clearTimeout(timeOutId);
-    } else {
-      headerNames.textContent = namesList[++i];
-      nextName.textContent = namesList[i + 1] || "Done!";
-      if (showTimer === true) {
-        timerWrapper.classList.add("visible");
+
+    function next() {
+      if (timer.innerHTML === "Over time!") {
+        startTimer();
       }
       timer.innerHTML = time;
+      if (i == namesList.length - 1) {
+        skipButton.style.display = "none";
+        nextButton.style.display = "none";
+        startButton.style.display = "inline-block";
+        shuffleButton.style.display = "inline-block";
+        startButton.innerHTML = "Restart";
+        nextName.textContent = "";
+        // nextName.textContent = namesList[0];
+        headerNames.textContent = "Done!";
+        timerWrapper.classList.remove("visible");
+        clearTimeout(timeOutId);
+      } else {
+        headerNames.textContent = namesList[++i];
+        nextName.textContent = namesList[i + 1] || "Done!";
+        if (showTimer === true) {
+          timerWrapper.classList.add("visible");
+        }
+        timer.innerHTML = time;
+      }
     }
-  }
 
-  const startTimer = function () {
-    const presentTime = timer.innerHTML;
-    const timeArray = presentTime.split(/[:]+/);
-    let m = timeArray[0];
-    let s = checkSecond(timeArray[1] - 1);
+    const startTimer = function () {
+      const presentTime = timer.innerHTML;
+      const timeArray = presentTime.split(/[:]+/);
+      let m = timeArray[0];
+      let s = checkSecond(timeArray[1] - 1);
 
-    if (s == 59) {
-      m = m - 1;
-    }
-    if (s == 0 && m == 0) {
-      timer.innerHTML = "Over time!";
-    } else {
-      timer.innerHTML = m + ":" + s;
-      timeOutId = setTimeout(startTimer, 1000);
-    }
-  };
+      if (s == 59) {
+        m = m - 1;
+      }
+      if (s == 0 && m == 0) {
+        timer.innerHTML = "Over time!";
+      } else {
+        timer.innerHTML = m + ":" + s;
+        timeOutId = setTimeout(startTimer, 1000);
+      }
+    };
 
-  // Start stand-up
-  startButton.addEventListener("click", function () {
-    this.style.display = "none";
-    shuffleButton.style.display = "none";
-    nextButton.style.display = "inline-block";
-    skipButton.style.display = "inline-block";
-    nextName.style.display = "inline";
-    timerWrapper.classList.add("visible");
+    // Start stand-up
+    startButton.addEventListener("click", function () {
+      this.style.display = "none";
+      shuffleButton.style.display = "none";
+      nextButton.style.display = "inline-block";
+      skipButton.style.display = "inline-block";
+      nextName.style.display = "inline";
+      timerWrapper.classList.add("visible");
 
-    //namesList = shuffle(namesList);
-    i = 0;
-    headerNames.textContent = namesList[i];
-    nextName.textContent = namesList[i + 1];
-    timer.innerHTML = time;
-    startTimer();
-  });
+      //namesList = shuffle(namesList);
+      i = 0;
+      headerNames.textContent = namesList[i];
+      nextName.textContent = namesList[i + 1];
+      timer.innerHTML = time;
+      startTimer();
+    });
 
-  shuffleButton.addEventListener("click", function () {
-    namesList = shuffle(namesList);
-    nextName.textContent = namesList[0];
-  });
+    shuffleButton.addEventListener("click", function () {
+      namesList = shuffle(namesList);
+      nextName.textContent = namesList[0];
+    });
 
-  nextButton.addEventListener("click", function () {
-    next();
-  });
+    nextButton.addEventListener("click", function () {
+      next();
+    });
 
-  skipButton.addEventListener("click", function () {
-    namesList.push(headerNames.textContent);
-    next();
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    namesList = shuffle(namesList);
-    nextName.textContent = namesList[0];
+    skipButton.addEventListener("click", function () {
+      namesList.push(headerNames.textContent);
+      next();
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+      namesList = shuffle(namesList);
+      nextName.textContent = namesList[0];
+    });
   });
 </script>
 
