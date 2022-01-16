@@ -2,43 +2,43 @@ import { onMount } from "svelte";
 import { writable } from "svelte/store";
 
 export function persistable(key, defaultValue) {
-	let mounted = false;
-	const { subscribe, set, update} = writable(defaultValue);
+  let mounted = false;
+  const { subscribe, set, update } = writable(defaultValue);
 
-	const persistantSet = (value) => {
-		set(value);
+  const persistantSet = (value) => {
+    set(value);
 
-		if(mounted) {
-			const jsonValue = JSON.stringify(value);
-			localStorage.setItem(key, jsonValue);
-		}
-	};
+    if (mounted) {
+      const jsonValue = JSON.stringify(value);
+      localStorage.setItem(key, jsonValue);
+    }
+  };
 
-	const persistantUpdate = (fn) => {
-		update((oldValue) => {
-			const value = fn(oldValue);
+  const persistantUpdate = (fn) => {
+    update((oldValue) => {
+      const value = fn(oldValue);
 
-			if(mounted) {
-				const jsonValue = JSON.stringify(value);
-				localStorage.setItem(key, jsonValue);
-			}
+      if (mounted) {
+        const jsonValue = JSON.stringify(value);
+        localStorage.setItem(key, jsonValue);
+      }
 
-			return value
-		})
-	}
+      return value;
+    });
+  };
 
-	onMount(() => {
-		mounted = true;
-		if(key in localStorage) {
-			const value = JSON.parse(localStorage.getItem(key))
+  onMount(() => {
+    mounted = true;
+    if (key in localStorage) {
+      const value = JSON.parse(localStorage.getItem(key));
 
-			set(value);
-		}
-	});
+      set(value);
+    }
+  });
 
-	return {
-		set: persistantSet,
-		update: persistantUpdate,
-		subscribe
-	}
+  return {
+    set: persistantSet,
+    update: persistantUpdate,
+    subscribe,
+  };
 }
