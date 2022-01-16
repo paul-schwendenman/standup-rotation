@@ -2,7 +2,7 @@
   import Standup from "./components/Standup.svelte";
 </script>
 
-<main class="m-auto max-w-sm">
+<main class="mx-auto my-8 max-w-2xl">
   <Standup />
 </main>
 
