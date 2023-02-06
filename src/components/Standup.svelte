@@ -109,6 +109,7 @@
 
   function reset() {
     done = false;
+    timer = null;
     shuffleNames();
   }
 
