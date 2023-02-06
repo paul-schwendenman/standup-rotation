@@ -7,7 +7,7 @@
   export let welcome = "Welcome to stand-up";
   export let doneMessage = "Done!";
 
-  export let namesList = [
+  export let names = [
     "Adam",
     "Adrian",
     "Carson",
@@ -32,11 +32,12 @@
   let currentName;
   let nextName;
   let timer = time;
+  let namesList = [];
 
   let i = 0;
 
   function shuffleNames() {
-    namesList = shuffle(namesList);
+    namesList = [...shuffle(names)];
     nextName = namesList[0] || '';
   }
 
@@ -59,8 +60,10 @@
 
   function start() {
     started = true;
+    if(namesList.length === 0) {
+      namesList = [...names];
+    }
 
-    //namesList = shuffle(namesList);
     i = 0;
     currentName = namesList[i];
     nextName = namesList[i + 1];
@@ -102,6 +105,7 @@
 
   function reset() {
     done = false;
+    shuffleNames();
   }
 
   onMount(() => {

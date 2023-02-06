@@ -21,7 +21,7 @@
 
 <main class="mx-auto my-8 max-w-2xl p-2">
   <Standup
-    namesList={$namesList}
+    names={$namesList}
     showTimer={$settings.showTimer}
     doneMessage={$settings.done}
     time={$settings.duration}
