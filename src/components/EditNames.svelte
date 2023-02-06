@@ -33,7 +33,7 @@
 	</div>
 {/each}
 
-<div class="input-group">
+<div class="input-group mt-1">
 	<input type="text" bind:value={newName} placeholder="name" class="input input-bordered" />
 	<button class="btn" on:click={addName}>Add</button>
 </div>

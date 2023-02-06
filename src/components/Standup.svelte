@@ -31,7 +31,7 @@
   let done = false;
   let currentName;
   let nextName;
-  let timer = time;
+  let timer;
   let namesList = [];
 
   let i = 0;
@@ -128,7 +128,7 @@
   {#if showTimer && !done}
     <section class="flex-wrap md:flex-nowrap justify-left md:justify-center">
       <div class="text-2xl">
-        Time left: <span id="timer">{timer}</span>
+        Time left: <span id="timer">{timer || time}</span>
       </div>
     </section>
   {/if}
@@ -137,11 +137,11 @@
     {#if done}
       <button on:click={reset} class="btn btn-primary">reset</button>
     {:else if !started}
-      <button on:click={start} class="btn btn-primary">start</button>
+      <button on:click={start} class="btn btn-primary" disabled={names.length === 0}>start</button>
       <button on:click={shuffleNames} class="btn">shuffle</button>
     {:else}
       <button on:click={next} class="btn btn-primary">next</button>
-      <button on:click={skip} class="btn" disabled={i + 1 == namesList.length}>re-enqueue</button>
+      <button on:click={skip} class="btn" disabled={i + 1 === namesList.length}>re-enqueue</button>
     {/if}
   </section>
 </div>
