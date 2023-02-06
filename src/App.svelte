@@ -19,7 +19,7 @@
   $: console.log($namesList);
 </script>
 
-<main class="mx-auto my-8 max-w-2xl">
+<main class="mx-auto my-8 max-w-2xl p-2">
   <Standup
     namesList={$namesList}
     showTimer={$settings.showTimer}
