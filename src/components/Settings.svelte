@@ -1,30 +1,37 @@
 <script>
   import { writable } from "svelte/store";
 
-  export let showTimer = writable(true);
-  export let duration = writable("1:00");
-  export let welcome = writable("Welcome!");
+  export let settings = writable({
+    welcome: "",
+    done: "",
+    duration: "1:00",
+    showTimer: true,
+  });
 </script>
 
 <div>
   <label>
     <span>Show timer:</span>
-    <input bind:checked={$showTimer} type="checkbox" class="toggle" />
+    <input bind:checked={$settings.showTimer} type="checkbox" class="toggle" />
   </label>
 
   <label>
     <span>Duration:</span>
     <input
-      bind:value={$duration}
+      bind:value={$settings.duration}
       type="text"
       class="input input-bordered"
-      disabled={!$showTimer}
+      disabled={!$settings.showTimer}
     />
   </label>
 
   <label>
     <span>Welcome message:</span>
-    <input bind:value={$welcome} type="text" class="input input-bordered" />
+    <input
+      bind:value={$settings.welcome}
+      type="text"
+      class="input input-bordered"
+    />
   </label>
 </div>
 
