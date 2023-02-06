@@ -110,7 +110,7 @@
 </script>
 
 <div>
-  <section>
+  <section class="flex-wrap md:flex-nowrap justify-left md:justify-center">
     {#if done}
       <span class="text-5xl">{doneMessage}</span>
     {:else if !started}
@@ -121,7 +121,15 @@
     <span class="text-2xl text-base-200">{nextName}</span>
   </section>
 
-  <section>
+  {#if showTimer}
+    <section class="flex-wrap md:flex-nowrap justify-left md:justify-center">
+      <div class="text-2xl">
+        Time left: <span id="timer">{timer}</span>
+      </div>
+    </section>
+  {/if}
+
+  <section class="flex-wrap md:flex-nowrap justify-left md:justify-center">
     {#if done}
       <button on:click={reset} class="btn btn-primary">reset</button>
     {:else if !started}
@@ -129,21 +137,13 @@
       <button on:click={shuffleNames} class="btn">shuffle</button>
     {:else}
       <button on:click={next} class="btn btn-primary">next</button>
-      <button on:click={skip} class="btn">re-enqueue</button>
+      <button on:click={skip} class="btn" disabled={i + 1 == namesList.length}>re-enqueue</button>
     {/if}
   </section>
-
-  {#if showTimer}
-    <section>
-      <div class="text-2xl">
-        Time left: <span id="timer">{timer}</span>
-      </div>
-    </section>
-  {/if}
 </div>
 
 <style>
   section {
-    @apply flex justify-center items-baseline mb-8 gap-2;
+    @apply flex items-baseline mb-8 gap-2;
   }
 </style>
