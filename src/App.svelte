@@ -23,6 +23,7 @@
   <Standup
     namesList={$namesList}
     showTimer={$settings.showTimer}
+    doneMessage={$settings.done}
     time={$settings.duration}
     welcome={$settings.welcome}
   />

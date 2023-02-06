@@ -52,7 +52,7 @@
       clearTimeout(timeOutId);
     } else {
       currentName = namesList[++i];
-      nextName = namesList[i + 1] || "Done!";
+      nextName = namesList[i + 1] || doneMessage;
       timer = time;
     }
   }
@@ -121,7 +121,7 @@
     <span class="text-2xl text-base-200">{nextName}</span>
   </section>
 
-  {#if showTimer}
+  {#if showTimer && !done}
     <section class="flex-wrap md:flex-nowrap justify-left md:justify-center">
       <div class="text-2xl">
         Time left: <span id="timer">{timer}</span>

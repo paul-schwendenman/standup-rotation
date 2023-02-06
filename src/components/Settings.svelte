@@ -36,6 +36,15 @@
     />
   </label>
 
+  <label>
+    <span>Done message:</span>
+    <input
+      bind:value={$settings.done}
+      type="text"
+      class="input input-bordered"
+    />
+  </label>
+
   <EditNames bind:names={$settings.names}/>
 </div>
 
