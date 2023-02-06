@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from "svelte";
+  import { createEventDispatcher, onMount } from "svelte";
   import { shuffle } from "./utils";
 
   export let showTimer = true;
@@ -25,6 +25,8 @@
     "Tyler",
   ];
 
+  const dispatch = createEventDispatcher();
+
   var timeOutId;
 
   let started = false;
@@ -49,6 +51,7 @@
     if (i == namesList.length - 1) {
       done = true;
       started = false;
+      dispatch('running', false);
       nextName = "";
       clearTimeout(timeOutId);
     } else {
@@ -60,6 +63,7 @@
 
   function start() {
     started = true;
+    dispatch('running', true);
     if(namesList.length === 0) {
       namesList = [...names];
     }

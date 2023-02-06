@@ -4,7 +4,6 @@
   import { persistable } from "./stores";
   import { derived } from "svelte/store";
 
-  // const namesList = ["Paul", "Tyler"];
   const settings = persistable("settings", {
     welcome: "Welcome!",
     done: "Done.",
@@ -16,6 +15,12 @@
     return $settings.names.filter(item => item.active).map(item => item.name);
   }, []);
 
+  let showSettings = true;
+
+  function handleRunning(event) {
+    showSettings = !showSettings;
+  }
+
   $: validNames = $namesList.length > 0
 </script>
 
@@ -26,9 +31,12 @@
     doneMessage={$settings.done}
     time={$settings.duration}
     welcome={$settings.welcome}
+    on:running={handleRunning}
   />
 
+  {#if showSettings}
   <label for="my-modal-2" class="btn modal-button" class:btn-outline={validNames} class:btn-secondary={!validNames}>Settings</label>
+  {/if}
   <input type="checkbox" id="my-modal-2" class="modal-toggle" />
   <div class="modal">
     <div class="modal-box">
