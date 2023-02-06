@@ -1,11 +1,13 @@
 <script>
   import { writable } from "svelte/store";
+    import EditNames from "./EditNames.svelte";
 
   export let settings = writable({
     welcome: "",
     done: "",
     duration: "1:00",
     showTimer: true,
+	names: []
   });
 </script>
 
@@ -33,6 +35,8 @@
       class="input input-bordered"
     />
   </label>
+
+  <EditNames bind:names={$settings.names}/>
 </div>
 
 <style>

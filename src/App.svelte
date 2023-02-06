@@ -2,19 +2,26 @@
   import Standup from "./components/Standup.svelte";
   import Settings from "./components/Settings.svelte";
   import { persistable } from "./stores";
+  import { derived } from "svelte/store";
 
-  const namesList = ["Paul", "Tyler"];
+  // const namesList = ["Paul", "Tyler"];
   const settings = persistable("settings", {
     welcome: "Hi!",
     done: "Done.",
     duration: "1:00",
     showTimer: true,
+    names: []
   });
+  const namesList = derived(settings, ($settings) => {
+    return $settings.names.filter(item => item.active).map(item => item.name);
+  }, []);
+
+  $: console.log($namesList);
 </script>
 
 <main class="mx-auto my-8 max-w-2xl">
   <Standup
-    {namesList}
+    namesList={$namesList}
     showTimer={$settings.showTimer}
     time={$settings.duration}
     welcome={$settings.welcome}
