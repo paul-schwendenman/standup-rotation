@@ -5,8 +5,9 @@
   export let showTimer = true;
   export let time = "1:00";
   export let welcome = "Welcome to stand-up";
+  export let doneMessage = "Done!";
 
-  export let namesList = [
+  export let names = [
     "Adam",
     "Adrian",
     "Carson",
@@ -27,16 +28,17 @@
   var timeOutId;
 
   let started = false;
+  let done = false;
   let currentName;
   let nextName;
-  let timer = "";
-  let startText = "start";
+  let timer = time;
+  let namesList = [];
 
   let i = 0;
 
   function shuffleNames() {
-    namesList = shuffle(namesList);
-    nextName = namesList[0];
+    namesList = [...shuffle(names)];
+    nextName = namesList[0] || '';
   }
 
   function next() {
@@ -45,22 +47,23 @@
     }
     timer = time;
     if (i == namesList.length - 1) {
+      done = true;
       started = false;
-      startText = "Restart";
       nextName = "";
-      welcome = "Done!";
       clearTimeout(timeOutId);
     } else {
       currentName = namesList[++i];
-      nextName = namesList[i + 1] || "Done!";
+      nextName = namesList[i + 1] || doneMessage;
       timer = time;
     }
   }
 
   function start() {
     started = true;
+    if(namesList.length === 0) {
+      namesList = [...names];
+    }
 
-    //namesList = shuffle(namesList);
     i = 0;
     currentName = namesList[i];
     nextName = namesList[i + 1];
@@ -100,38 +103,51 @@
     next();
   }
 
+  function reset() {
+    done = false;
+    shuffleNames();
+  }
+
   onMount(() => {
     shuffleNames();
   });
 </script>
 
 <div>
-  <section>
-    <span class="text-5xl">{started ? currentName : welcome}</span>
+  <section class="flex-wrap md:flex-nowrap justify-left md:justify-center">
+    {#if done}
+      <span class="text-5xl">{doneMessage}</span>
+    {:else if !started}
+      <span class="text-5xl">{welcome}</span>
+    {:else}
+      <span class="text-5xl">{currentName}</span>
+    {/if}
     <span class="text-2xl text-base-200">{nextName}</span>
   </section>
 
-  <section>
-    {#if !started}
-      <button on:click={start} class="btn btn-primary">{startText}</button>
-      <button on:click={shuffleNames} class="btn">shuffle</button>
-    {:else}
-      <button on:click={next} class="btn btn-primary">next</button>
-      <button on:click={skip} class="btn">re-enqueue</button>
-    {/if}
-  </section>
-
-  {#if started && showTimer}
-    <section>
+  {#if showTimer && !done}
+    <section class="flex-wrap md:flex-nowrap justify-left md:justify-center">
       <div class="text-2xl">
         Time left: <span id="timer">{timer}</span>
       </div>
     </section>
   {/if}
+
+  <section class="flex-wrap md:flex-nowrap justify-left md:justify-center">
+    {#if done}
+      <button on:click={reset} class="btn btn-primary">reset</button>
+    {:else if !started}
+      <button on:click={start} class="btn btn-primary">start</button>
+      <button on:click={shuffleNames} class="btn">shuffle</button>
+    {:else}
+      <button on:click={next} class="btn btn-primary">next</button>
+      <button on:click={skip} class="btn" disabled={i + 1 == namesList.length}>re-enqueue</button>
+    {/if}
+  </section>
 </div>
 
 <style>
   section {
-    @apply flex justify-center items-baseline mb-8 gap-2;
+    @apply flex items-baseline mb-8 gap-2;
   }
 </style>
