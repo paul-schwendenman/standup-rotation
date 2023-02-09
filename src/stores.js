@@ -1,6 +1,47 @@
 import { onMount } from "svelte";
 import { writable } from "svelte/store";
 
+export function urlHash(defaultValue) {
+  const { subscribe, set, update } = writable(defaultValue);
+
+  function decode(base64) {
+    console.log({base64});
+    console.log({decoded: decodeURI(base64)});
+    console.log(JSON.parse(decodeURI(base64)));
+    return JSON.parse(decodeURI(base64));
+  }
+
+  async function encode(value) {
+    return JSON.stringify(value);
+  }
+
+  async function persistantSet(value) {
+    location.hash = await encode(value);
+
+    set(value);
+  }
+
+  function persistantUpdate(fn) {
+    update(async oldValue => {
+      const newValue = fn(oldValue);
+
+      location.hash = await encode(newValue)
+    })
+  }
+
+  const base64 = location.hash.substring(1);
+
+  if(base64.length > 0) {
+    set(decode(base64));
+  }
+
+  return {
+    set: persistantSet,
+    update: persistantUpdate,
+    subscribe
+  }
+};
+
 export function persistable(key, defaultValue) {
   let mounted = false;
   const { subscribe, set, update } = writable(defaultValue);

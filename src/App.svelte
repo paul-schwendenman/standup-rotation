@@ -1,16 +1,25 @@
 <script>
   import Standup from "./components/Standup.svelte";
   import Settings from "./components/Settings.svelte";
-  import { persistable } from "./stores";
+  import { persistable, urlHash } from "./stores";
   import { derived } from "svelte/store";
 
-  const settings = persistable("settings", {
+  // const settings1 = persistable("settings", {
+  //   welcome: "Welcome!",
+  //   done: "Done.",
+  //   duration: "1:00",
+  //   showTimer: true,
+  //   names: []
+  // });
+
+  const settings = urlHash({
     welcome: "Welcome!",
     done: "Done.",
     duration: "1:00",
     showTimer: true,
     names: []
   });
+
   const namesList = derived(settings, ($settings) => {
     return $settings.names.filter(item => item.active).map(item => item.name);
   }, []);
