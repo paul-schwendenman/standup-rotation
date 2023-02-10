@@ -17,12 +17,18 @@
     done: "Done.",
     duration: "1:00",
     showTimer: true,
-    names: []
+    names: [],
   });
 
-  const namesList = derived(settings, ($settings) => {
-    return $settings.names.filter(item => item.active).map(item => item.name);
-  }, []);
+  const namesList = derived(
+    settings,
+    ($settings) => {
+      return $settings.names
+        .filter((item) => item.active)
+        .map((item) => item.name);
+    },
+    []
+  );
 
   let showSettings = true;
 
@@ -30,7 +36,7 @@
     showSettings = !showSettings;
   }
 
-  $: validNames = $namesList.length > 0
+  $: validNames = $namesList.length > 0;
 </script>
 
 <main class="mx-auto my-8 max-w-2xl p-2">
@@ -44,7 +50,12 @@
   />
 
   {#if showSettings}
-  <label for="my-modal-2" class="btn modal-button" class:btn-outline={validNames} class:btn-secondary={!validNames}>Settings</label>
+    <label
+      for="my-modal-2"
+      class="btn modal-button"
+      class:btn-outline={validNames}
+      class:btn-secondary={!validNames}>Settings</label
+    >
   {/if}
   <input type="checkbox" id="my-modal-2" class="modal-toggle" />
   <div class="modal">

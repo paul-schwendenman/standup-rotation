@@ -1,13 +1,13 @@
 <script>
   import { writable } from "svelte/store";
-    import EditNames from "./EditNames.svelte";
+  import EditNames from "./EditNames.svelte";
 
   export let settings = writable({
     welcome: "",
     done: "",
     duration: "1:00",
     showTimer: true,
-    names: []
+    names: [],
   });
 
   $: validDuration = new RegExp("^[0-9]+:[0-5][0-9]$").test($settings.duration);
@@ -55,7 +55,7 @@
     />
   </label>
 
-  <EditNames bind:names={$settings.names}/>
+  <EditNames bind:names={$settings.names} />
 </div>
 
 <style>

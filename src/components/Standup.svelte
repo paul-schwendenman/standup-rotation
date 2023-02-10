@@ -40,7 +40,7 @@
 
   function shuffleNames() {
     namesList = [...shuffle(names)];
-    nextName = namesList[0] || '';
+    nextName = namesList[0] || "";
   }
 
   function next() {
@@ -51,7 +51,7 @@
     if (i == namesList.length - 1) {
       done = true;
       started = false;
-      dispatch('running', false);
+      dispatch("running", false);
       nextName = "";
       clearTimeout(timeOutId);
     } else {
@@ -63,8 +63,8 @@
 
   function start() {
     started = true;
-    dispatch('running', true);
-    if(namesList.length === 0) {
+    dispatch("running", true);
+    if (namesList.length === 0) {
       namesList = [...names];
     }
 
@@ -142,11 +142,17 @@
     {#if done}
       <button on:click={reset} class="btn btn-primary">reset</button>
     {:else if !started}
-      <button on:click={start} class="btn btn-primary" disabled={names.length === 0}>start</button>
+      <button
+        on:click={start}
+        class="btn btn-primary"
+        disabled={names.length === 0}>start</button
+      >
       <button on:click={shuffleNames} class="btn">shuffle</button>
     {:else}
       <button on:click={next} class="btn btn-primary">next</button>
-      <button on:click={skip} class="btn" disabled={i + 1 === namesList.length}>re-enqueue</button>
+      <button on:click={skip} class="btn" disabled={i + 1 === namesList.length}
+        >re-enqueue</button
+      >
     {/if}
   </section>
 </div>
