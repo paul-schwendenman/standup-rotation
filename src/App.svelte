@@ -49,12 +49,12 @@
     on:running={handleRunning}
   />
 
-  <input type="checkbox" id="my-modal-2" class="modal-toggle" />
+  <input type="checkbox" id="settings-modal" class="modal-toggle" />
   <div class="modal">
     <div class="modal-box">
       <Settings {settings} />
       <div class="modal-action">
-        <label for="my-modal-2" class="btn">Save</label>
+        <label for="settings-modal" class="btn">Save</label>
       </div>
     </div>
   </div>
@@ -63,7 +63,7 @@
   <div class="mx-auto max-w-2xl p-2">
     {#if showSettings}
       <label
-        for="my-modal-2"
+        for="settings-modal"
         class="btn modal-button"
         class:btn-outline={validNames}
         class:btn-secondary={!validNames}>Settings</label
