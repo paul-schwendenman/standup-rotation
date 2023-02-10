@@ -9,7 +9,7 @@ export function urlHash(defaultValue) {
     return JSON.parse(decompressFromEncodedURIComponent(base64));
   }
 
-  async function encode(value) {
+  function encode(value) {
     return compressToEncodedURIComponent(JSON.stringify(value));
   }
 
@@ -20,10 +20,10 @@ export function urlHash(defaultValue) {
   }
 
   function persistantUpdate(fn) {
-    update(async oldValue => {
+    update(oldValue => {
       const newValue = fn(oldValue);
 
-      location.hash = await encode(newValue)
+      location.hash = encode(newValue)
     })
   }
 
