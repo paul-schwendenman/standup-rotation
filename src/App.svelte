@@ -49,14 +49,6 @@
     on:running={handleRunning}
   />
 
-  {#if showSettings}
-    <label
-      for="my-modal-2"
-      class="btn modal-button"
-      class:btn-outline={validNames}
-      class:btn-secondary={!validNames}>Settings</label
-    >
-  {/if}
   <input type="checkbox" id="my-modal-2" class="modal-toggle" />
   <div class="modal">
     <div class="modal-box">
@@ -67,6 +59,19 @@
     </div>
   </div>
 </main>
+<footer class="fixed inset-x-0 bottom-0">
+  <div class="mx-auto max-w-2xl p-2">
+    {#if showSettings}
+      <label
+        for="my-modal-2"
+        class="btn modal-button"
+        class:btn-outline={validNames}
+        class:btn-secondary={!validNames}>Settings</label
+      >
+    {/if}
+
+  </div>
+</footer>
 
 <style global>
   @tailwind base;
