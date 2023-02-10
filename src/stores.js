@@ -1,18 +1,16 @@
 import { onMount } from "svelte";
 import { writable } from "svelte/store";
+import { decompressFromEncodedURIComponent, compressToEncodedURIComponent } from "lz-string";
 
 export function urlHash(defaultValue) {
   const { subscribe, set, update } = writable(defaultValue);
 
   function decode(base64) {
-    console.log({base64});
-    console.log({decoded: decodeURI(base64)});
-    console.log(JSON.parse(decodeURI(base64)));
-    return JSON.parse(decodeURI(base64));
+    return JSON.parse(decompressFromEncodedURIComponent(base64));
   }
 
   async function encode(value) {
-    return JSON.stringify(value);
+    return compressToEncodedURIComponent(JSON.stringify(value));
   }
 
   async function persistantSet(value) {
