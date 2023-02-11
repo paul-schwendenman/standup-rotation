@@ -55,7 +55,7 @@
     <div class="modal-box">
       <Settings {settings} />
       <div class="modal-action">
-        <label for="settings-modal" class="btn">Save</label>
+        <label for="settings-modal" class="btn btn-secondary">Save</label>
       </div>
     </div>
   </div>
