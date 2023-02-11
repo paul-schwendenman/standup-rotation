@@ -59,7 +59,6 @@
       </div>
     </div>
   </div>
-
 </main>
 <footer class="fixed inset-x-0 bottom-0">
   <div class="mx-auto max-w-2xl p-2">

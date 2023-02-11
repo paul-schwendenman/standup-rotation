@@ -53,7 +53,9 @@
 
 <div class="dropdown dropdown-top">
   <button tabindex="-1" class="btn btn-accent m-1">Theme</button>
-  <div class="dropdown-content w-52 overflow-y-auto bg-base-200 h-[70vh] rounded">
+  <div
+    class="dropdown-content w-52 overflow-y-auto bg-base-200 h-[70vh] rounded"
+  >
     <div class="grid grid-cols-1 gap-3 p-3">
       {#each themes as theme (theme)}
         <div on:click={() => handleSetTheme(theme)}>
