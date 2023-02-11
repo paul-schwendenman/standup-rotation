@@ -54,15 +54,6 @@
 <div
   class="rounded-box grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
 >
-  <div
-    on:click={() => handleSetTheme("")}
-    class="btn border-base-content/20 hover:border-base-content/40 outline-base-content overflow-hidden rounded-lg border outline-2 outline-offset-2"
-    class:outline={currentTheme === ""}
-    data-set-theme=""
-    data-act-class="outline"
-  >
-    default (system)
-  </div>
   {#each themes as theme (theme)}
     <div
       on:click={() => handleSetTheme(theme)}
