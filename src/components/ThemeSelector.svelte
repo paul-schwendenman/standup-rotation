@@ -25,14 +25,14 @@
     "black",
     "luxury",
     "dracula",
-    // 'cmyk',
-    // 'autumn',
-    // 'business',
-    // 'acid',
-    // 'lemonade',
-    // 'night',
-    // 'coffee',
-    // 'winter'
+    'cmyk',
+    'autumn',
+    'business',
+    'acid',
+    'lemonade',
+    'night',
+    'coffee',
+    'winter'
   ];
   let currentTheme;
 
