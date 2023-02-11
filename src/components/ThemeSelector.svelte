@@ -52,7 +52,7 @@
 </script>
 
 <div
-  class="rounded-box grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+  class="rounded-box grid grid-cols-2 gap-4 md:grid-cols-2"
 >
   {#each themes as theme (theme)}
     <div
