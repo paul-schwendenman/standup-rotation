@@ -127,7 +127,7 @@
     {:else}
       <span class="text-5xl">{currentName}</span>
     {/if}
-    <span class="text-xl opacity-50">{nextName}</span>
+    <span class="text-xl text-base-content/50">{nextName}</span>
   </section>
 
   {#if showTimer && !done}
