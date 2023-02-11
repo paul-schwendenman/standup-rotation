@@ -25,14 +25,14 @@
     "black",
     "luxury",
     "dracula",
-    'cmyk',
-    'autumn',
-    'business',
-    'acid',
-    'lemonade',
-    'night',
-    'coffee',
-    'winter'
+    "cmyk",
+    "autumn",
+    "business",
+    "acid",
+    "lemonade",
+    "night",
+    "coffee",
+    "winter",
   ];
   let currentTheme;
 
@@ -51,18 +51,15 @@
   });
 </script>
 
-<div
-  class="rounded-box grid grid-cols-2 gap-4 md:grid-cols-2"
->
-  {#each themes as theme (theme)}
-    <div
-      on:click={() => handleSetTheme(theme)}
-      class="border-base-content/20 hover:border-base-content/40 outline-base-content overflow-hidden rounded-lg border outline-2 outline-offset-2"
-      class:outline={currentTheme === theme}
-      data-set-theme={theme}
-      data-act-class="outline"
-    >
-      <ThemeExample {theme} />
+<div class="dropdown dropdown-top">
+  <button tabindex="-1" class="btn btn-accent m-1">Theme</button>
+  <div class="dropdown-content w-52 overflow-y-auto bg-base-200 h-[70vh] rounded">
+    <div class="grid grid-cols-1 gap-3 p-3">
+      {#each themes as theme (theme)}
+        <div on:click={() => handleSetTheme(theme)}>
+          <ThemeExample {theme} />
+        </div>
+      {/each}
     </div>
-  {/each}
+  </div>
 </div>

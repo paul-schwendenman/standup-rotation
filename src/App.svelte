@@ -60,23 +60,17 @@
     </div>
   </div>
 
-  <input type="checkbox" id="theme-modal" class="modal-toggle" />
-  <label for="theme-modal" class="modal cursor-pointer">
-    <label class="modal-box relative" for="">
-      <h3 class="text-lg font-bold">Change the theme</h3>
-      <ThemeSelector />
-    </label>
-  </label>
 </main>
 <footer class="fixed inset-x-0 bottom-0">
   <div class="mx-auto max-w-2xl p-2">
     <label
       for="settings-modal"
       class="btn modal-button btn-secondary"
-      class:btn-disabled={!showSettings}>
+      class:btn-disabled={!showSettings}
+    >
       Settings
     </label>
-    <label for="theme-modal" class="btn modal-button btn-accent">Theme</label>
+    <ThemeSelector>Theme</ThemeSelector>
   </div>
 </footer>
 
