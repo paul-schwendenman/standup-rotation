@@ -3,6 +3,7 @@
   import Settings from "./components/Settings.svelte";
   import { persistable, urlHash } from "./stores";
   import { derived } from "svelte/store";
+  import ThemeSelector from "./components/ThemeSelector.svelte";
 
   // const settings1 = persistable("settings", {
   //   welcome: "Welcome!",
@@ -58,6 +59,14 @@
       </div>
     </div>
   </div>
+
+  <input type="checkbox" id="theme-modal" class="modal-toggle" />
+  <label for="theme-modal" class="modal cursor-pointer">
+    <label class="modal-box relative" for="">
+      <h3 class="text-lg font-bold">Change the theme</h3>
+      <ThemeSelector />
+    </label>
+  </label>
 </main>
 <footer class="fixed inset-x-0 bottom-0">
   <div class="mx-auto max-w-2xl p-2">
@@ -69,7 +78,7 @@
         class:btn-secondary={!validNames}>Settings</label
       >
     {/if}
-
+    <label for="theme-modal" class="btn modal-button btn-outline">Theme</label>
   </div>
 </footer>
 

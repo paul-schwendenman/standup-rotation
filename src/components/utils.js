@@ -14,3 +14,17 @@ export function shuffle(array) {
 
   return array;
 }
+
+export const loadTheme = () => {
+  const theme = localStorage.getItem("theme");
+  if (theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+  }
+
+  return theme;
+};
+
+export const setTheme = (theme) => {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("theme", theme);
+};
