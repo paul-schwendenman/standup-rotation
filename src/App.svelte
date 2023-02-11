@@ -70,15 +70,13 @@
 </main>
 <footer class="fixed inset-x-0 bottom-0">
   <div class="mx-auto max-w-2xl p-2">
-    {#if showSettings}
-      <label
-        for="settings-modal"
-        class="btn modal-button"
-        class:btn-outline={validNames}
-        class:btn-secondary={!validNames}>Settings</label
-      >
-    {/if}
-    <label for="theme-modal" class="btn modal-button btn-outline">Theme</label>
+    <label
+      for="settings-modal"
+      class="btn modal-button btn-secondary"
+      class:btn-disabled={!showSettings}>
+      Settings
+    </label>
+    <label for="theme-modal" class="btn modal-button btn-accent">Theme</label>
   </div>
 </footer>
 
