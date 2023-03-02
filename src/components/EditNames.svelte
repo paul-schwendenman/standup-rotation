@@ -1,5 +1,7 @@
-<script>
-  export let names = [];
+<script lang="ts">
+  import type { Person } from './../types/Person';
+
+  export let names: Person[] = [];
 
   let newName = "";
 
