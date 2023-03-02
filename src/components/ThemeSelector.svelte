@@ -58,9 +58,9 @@
   >
     <div class="grid grid-cols-1 gap-3 p-3">
       {#each themes as theme (theme)}
-        <div on:click={() => handleSetTheme(theme)}>
+        <button on:click={() => handleSetTheme(theme)}>
           <ThemeExample {theme} />
-        </div>
+        </button>
       {/each}
     </div>
   </div>
