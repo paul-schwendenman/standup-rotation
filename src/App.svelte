@@ -4,6 +4,7 @@
   import { persistable, urlHash } from "./stores";
   import { derived } from "svelte/store";
   import ThemeSelector from "./components/ThemeSelector.svelte";
+  import GithubCorner from "./components/GithubCorner.svelte";
 
   // const settings1 = persistable("settings", {
   //   welcome: "Welcome!",
@@ -39,6 +40,8 @@
 
   $: validNames = $namesList.length > 0;
 </script>
+
+<GithubCorner />
 
 <main class="mx-auto my-8 max-w-2xl p-2">
   <Standup
