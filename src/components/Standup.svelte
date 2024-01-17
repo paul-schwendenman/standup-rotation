@@ -140,17 +140,17 @@
 
   <section class="flex-wrap md:flex-nowrap justify-left md:justify-center">
     {#if done}
-      <button on:click={reset} class="btn btn-primary">reset</button>
+      <button on:click={reset} class="btn btn-primary uppercase">reset</button>
     {:else if !started}
       <button
         on:click={start}
-        class="btn btn-primary"
+        class="btn btn-primary uppercase"
         disabled={names.length === 0}>start</button
       >
-      <button on:click={shuffleNames} class="btn">shuffle</button>
+      <button on:click={shuffleNames} class="btn uppercase">shuffle</button>
     {:else}
-      <button on:click={next} class="btn btn-primary">next</button>
-      <button on:click={skip} class="btn" disabled={i + 1 === namesList.length}
+      <button on:click={next} class="btn btn-primary uppercase">next</button>
+      <button on:click={skip} class="btn uppercase" disabled={i + 1 === namesList.length}
         >re-enqueue</button
       >
     {/if}

@@ -25,7 +25,7 @@
       <span class="p-2" class:inactive={!name.active}>{name.name}</span>
     </span>
     <button
-      class="btn btn-circle justify-self-end"
+      class="btn btn-circle justify-self-end uppercase"
       on:click={removeItem(index)}
     >
       <svg
@@ -52,7 +52,7 @@
     placeholder="name"
     class="input input-bordered"
   />
-  <button class="btn" on:click={addName}>Add</button>
+  <button class="btn uppercase" on:click={addName}>Add</button>
 </div>
 
 <style>
