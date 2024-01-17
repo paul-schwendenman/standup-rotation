@@ -70,7 +70,7 @@
 
     i = 0;
     currentName = namesList[i];
-    nextName = namesList[i + 1];
+    nextName = namesList[i + 1] || doneMessage;
     timer = time;
     startTimer();
   }
