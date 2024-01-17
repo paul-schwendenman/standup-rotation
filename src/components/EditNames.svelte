@@ -22,7 +22,11 @@
   <div class="flex items-center justify-between mb-1">
     <span class="inline-flex items-center">
       <input class="checkbox" bind:checked={name.active} type="checkbox" />
-      <span class="p-2" class:inactive={!name.active}>{name.name}</span>
+      {#if name.active}
+        <span class="p-2" contenteditable="true" bind:textContent={name.name}>{name.name}</span>
+      {:else}
+        <span class="p-2 inactive">{name.name}</span>
+      {/if}
     </span>
     <button
       class="btn btn-circle justify-self-end uppercase"
