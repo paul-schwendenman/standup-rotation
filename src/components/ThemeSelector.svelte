@@ -55,7 +55,7 @@
 </script>
 
 <div class="dropdown dropdown-top">
-  <button tabindex="-1" class="btn btn-accent m-1 uppercase">Theme</button>
+  <button tabindex="-1" class="btn btn-accent m-1 uppercase"><slot></slot></button>
   <div
     class="dropdown-content w-52 overflow-y-auto bg-base-200 h-[70vh] rounded"
   >
