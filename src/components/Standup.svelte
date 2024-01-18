@@ -1,5 +1,5 @@
 <script>
-  import { createEventDispatcher, onMount } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import { shuffle } from "./utils";
 
   export let showTimer = true;
@@ -70,7 +70,7 @@
 
     i = 0;
     currentName = namesList[i];
-    nextName = namesList[i + 1];
+    nextName = namesList[i + 1] || doneMessage;
     timer = time;
     startTimer();
   }
@@ -113,9 +113,9 @@
     shuffleNames();
   }
 
-  onMount(() => {
+  $: (() => {
     shuffleNames();
-  });
+  })(names)
 </script>
 
 <div>
@@ -124,10 +124,11 @@
       <span class="text-5xl">{doneMessage}</span>
     {:else if !started}
       <span class="text-5xl">{welcome}</span>
+      <span class="text-xl text-base-content/50">{nextName}</span>
     {:else}
       <span class="text-5xl">{currentName}</span>
+      <span class="text-xl text-base-content/50">{nextName}</span>
     {/if}
-    <span class="text-xl text-base-content/50">{nextName}</span>
   </section>
 
   {#if showTimer && !done}
@@ -140,17 +141,17 @@
 
   <section class="flex-wrap md:flex-nowrap justify-left md:justify-center">
     {#if done}
-      <button on:click={reset} class="btn btn-primary">reset</button>
+      <button on:click={reset} class="btn btn-primary uppercase">reset</button>
     {:else if !started}
       <button
         on:click={start}
-        class="btn btn-primary"
+        class="btn btn-primary uppercase"
         disabled={names.length === 0}>start</button
       >
-      <button on:click={shuffleNames} class="btn">shuffle</button>
+      <button on:click={shuffleNames} class="btn uppercase">shuffle</button>
     {:else}
-      <button on:click={next} class="btn btn-primary">next</button>
-      <button on:click={skip} class="btn" disabled={i + 1 === namesList.length}
+      <button on:click={next} class="btn btn-primary uppercase">next</button>
+      <button on:click={skip} class="btn uppercase" disabled={i + 1 === namesList.length}
         >re-enqueue</button
       >
     {/if}
