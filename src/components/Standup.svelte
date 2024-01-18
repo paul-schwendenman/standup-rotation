@@ -1,5 +1,5 @@
 <script>
-  import { createEventDispatcher, onMount } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import { shuffle } from "./utils";
 
   export let showTimer = true;
@@ -113,9 +113,9 @@
     shuffleNames();
   }
 
-  onMount(() => {
+  $: (() => {
     shuffleNames();
-  });
+  })(names)
 </script>
 
 <div>
@@ -124,10 +124,11 @@
       <span class="text-5xl">{doneMessage}</span>
     {:else if !started}
       <span class="text-5xl">{welcome}</span>
+      <span class="text-xl text-base-content/50">{nextName}</span>
     {:else}
       <span class="text-5xl">{currentName}</span>
+      <span class="text-xl text-base-content/50">{nextName}</span>
     {/if}
-    <span class="text-xl text-base-content/50">{nextName}</span>
   </section>
 
   {#if showTimer && !done}
