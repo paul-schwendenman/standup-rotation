@@ -1,9 +1,7 @@
 import { onMount } from "svelte";
 import { writable } from "svelte/store";
-import {
-  decompressFromEncodedURIComponent,
-  compressToEncodedURIComponent,
-} from "lz-string";
+import lzString from 'lz-string';
+const {decompressFromEncodedURIComponent, compressToEncodedURIComponent} = lzString;
 
 export function urlHash(defaultValue) {
   const { subscribe, set, update } = writable(defaultValue);
