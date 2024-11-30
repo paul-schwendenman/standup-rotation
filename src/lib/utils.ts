@@ -1,6 +1,6 @@
 import type { Theme } from "./types";
 
-export function shuffle(array) {
+export function shuffle<T>(array: T[]): T[] {
 	let currentIndex = array.length,
 		randomIndex;
 
