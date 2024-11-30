@@ -1,3 +1,5 @@
+import type { Theme } from "./types";
+
 export function shuffle(array) {
 	let currentIndex = array.length,
 		randomIndex;
@@ -12,8 +14,8 @@ export function shuffle(array) {
 	return array;
 }
 
-export const loadTheme = () => {
-	const theme = localStorage.getItem('theme');
+export const loadTheme = (): Theme | null => {
+	const theme = localStorage.getItem('theme') as Theme | null;
 	if (theme) {
 		document.documentElement.setAttribute('data-theme', theme);
 	}
@@ -21,7 +23,7 @@ export const loadTheme = () => {
 	return theme;
 };
 
-export const setTheme = (theme) => {
+export const setTheme = (theme: Theme) => {
 	document.documentElement.setAttribute('data-theme', theme);
 	localStorage.setItem('theme', theme);
 };

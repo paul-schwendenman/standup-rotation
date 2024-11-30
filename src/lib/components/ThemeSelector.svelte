@@ -2,11 +2,11 @@
 	import ThemeExample from './ThemeExample.svelte';
 	import { onMount } from 'svelte';
 	import { setTheme, loadTheme } from '../utils';
-	import { themes } from '$lib/types';
+	import { themes, type Theme } from '$lib/types';
 
-	let currentTheme: string | null;
+	let currentTheme: Theme | null;
 
-	const handleSetTheme = (theme: string) => {
+	const handleSetTheme = (theme: Theme) => {
 		if (currentTheme !== theme) {
 			setTheme(theme);
 			currentTheme = theme;
