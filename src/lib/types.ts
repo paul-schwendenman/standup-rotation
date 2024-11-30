@@ -1,4 +1,4 @@
 export interface Person {
-    name: string
-    active: boolean
+	name: string;
+	active: boolean;
 }
