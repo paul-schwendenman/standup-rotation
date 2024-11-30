@@ -65,7 +65,7 @@
 	<div class="mx-auto max-w-2xl p-2">
 		<label
 			for="settings-modal"
-			class="btn modal-button btn-secondary uppercase"
+			class="modal-button btn btn-secondary uppercase"
 			class:btn-disabled={!showSettings}
 		>
 			Settings
@@ -73,9 +73,3 @@
 		<ThemeSelector>Theme</ThemeSelector>
 	</div>
 </footer>
-
-<style global>
-	@tailwind base;
-	@tailwind components;
-	@tailwind utilities;
-</style>
