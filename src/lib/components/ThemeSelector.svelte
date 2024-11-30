@@ -2,41 +2,8 @@
 	import ThemeExample from './ThemeExample.svelte';
 	import { onMount } from 'svelte';
 	import { setTheme, loadTheme } from '../utils';
+	import { themes } from '$lib/types';
 
-	const themes = [
-		'light',
-		'dark',
-		'cupcake',
-		'bumblebee',
-		'emerald',
-		'corporate',
-		'synthwave',
-		'retro',
-		'cyberpunk',
-		'valentine',
-		'halloween',
-		'garden',
-		'forest',
-		'aqua',
-		'lofi',
-		'pastel',
-		'fantasy',
-		'wireframe',
-		'black',
-		'luxury',
-		'dracula',
-		'cmyk',
-		'autumn',
-		'business',
-		'acid',
-		'lemonade',
-		'night',
-		'coffee',
-		'winter',
-		'dim',
-		'nord',
-		'sunset'
-	];
 	let currentTheme: string | null;
 
 	const handleSetTheme = (theme: string) => {

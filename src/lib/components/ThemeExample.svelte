@@ -1,5 +1,7 @@
-<script>
-	export let theme;
+<script lang="ts">
+	import type { Theme } from '$lib/types';
+
+	export let theme: Theme;
 </script>
 
 <div
