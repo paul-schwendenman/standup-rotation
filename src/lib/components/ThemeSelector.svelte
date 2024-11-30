@@ -1,70 +1,68 @@
-<script>
-  import ThemeExample from "./ThemeExample.svelte";
-  import { onMount } from "svelte";
-  import { setTheme, loadTheme } from "./utils";
+<script lang="ts">
+	import ThemeExample from './ThemeExample.svelte';
+	import { onMount } from 'svelte';
+	import { setTheme, loadTheme } from '../utils';
 
-  const themes = [
-    "light",
-    "dark",
-    "cupcake",
-    "bumblebee",
-    "emerald",
-    "corporate",
-    "synthwave",
-    "retro",
-    "cyberpunk",
-    "valentine",
-    "halloween",
-    "garden",
-    "forest",
-    "aqua",
-    "lofi",
-    "pastel",
-    "fantasy",
-    "wireframe",
-    "black",
-    "luxury",
-    "dracula",
-    "cmyk",
-    "autumn",
-    "business",
-    "acid",
-    "lemonade",
-    "night",
-    "coffee",
-    "winter",
-    "dim",
-    "nord",
-    "sunset",
-  ];
-  let currentTheme;
+	const themes = [
+		'light',
+		'dark',
+		'cupcake',
+		'bumblebee',
+		'emerald',
+		'corporate',
+		'synthwave',
+		'retro',
+		'cyberpunk',
+		'valentine',
+		'halloween',
+		'garden',
+		'forest',
+		'aqua',
+		'lofi',
+		'pastel',
+		'fantasy',
+		'wireframe',
+		'black',
+		'luxury',
+		'dracula',
+		'cmyk',
+		'autumn',
+		'business',
+		'acid',
+		'lemonade',
+		'night',
+		'coffee',
+		'winter',
+		'dim',
+		'nord',
+		'sunset'
+	];
+	let currentTheme: string | null;
 
-  const handleSetTheme = (theme) => {
-    if (currentTheme !== theme) {
-      setTheme(theme);
-      currentTheme = theme;
-    } else {
-      setTheme("");
-      currentTheme = undefined;
-    }
-  };
+	const handleSetTheme = (theme: string) => {
+		if (currentTheme !== theme) {
+			setTheme(theme);
+			currentTheme = theme;
+		} else {
+			setTheme('');
+			currentTheme = null;
+		}
+	};
 
-  onMount(() => {
-    currentTheme = loadTheme();
-  });
+	onMount(() => {
+		currentTheme = loadTheme();
+	});
 </script>
 
 <div class="dropdown dropdown-top">
-  <button tabindex="-1" class="btn btn-accent m-1 uppercase"><slot></slot></button>
-  <div
-    class="dropdown-content w-52 overflow-y-auto bg-base-200 h-[70vh] rounded"
-  >
-    <div class="grid grid-cols-1 gap-3 p-3">
-      {#each themes as theme (theme)}
-        <button on:click={() => handleSetTheme(theme)}>
-          <ThemeExample {theme} />
-        </button>
-      {/each}
-    </div>
-  </div>
+	<button tabindex="-1" class="btn btn-accent m-1 uppercase"><slot></slot></button>
+	<div class="dropdown-content h-[70vh] w-52 overflow-y-auto rounded bg-base-200">
+		<div class="grid grid-cols-1 gap-3 p-3">
+			{#each themes as theme (theme)}
+				<button on:click={() => handleSetTheme(theme)}>
+					<ThemeExample {theme} />
+				</button>
+			{/each}
+		</div>
+	</div>
 </div>

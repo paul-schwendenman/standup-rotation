@@ -1,10 +1,10 @@
 <script>
-	import Standup from './components/Standup.svelte';
-	import Settings from './components/Settings.svelte';
-	import { persistable, urlHash } from './stores';
+	import Standup from './Standup.svelte';
+	import Settings from './Settings.svelte';
+	import { persistable, urlHash } from '../stores';
 	import { derived } from 'svelte/store';
-	import ThemeSelector from './components/ThemeSelector.svelte';
-	import GithubCorner from './components/GithubCorner.svelte';
+	import ThemeSelector from './ThemeSelector.svelte';
+	import GithubCorner from './GithubCorner.svelte';
 
 	// const settings1 = persistable("settings", {
 	//   welcome: "Welcome!",
