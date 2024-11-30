@@ -32,7 +32,7 @@
 
 	let showSettings = true;
 
-	function handleRunning(event) {
+	function handleRunning(_event) {
 		showSettings = !showSettings;
 	}
 

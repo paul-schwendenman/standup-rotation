@@ -1,26 +1,26 @@
 import { onMount } from 'svelte';
-import { writable } from 'svelte/store';
+import { writable, type Updater } from 'svelte/store';
 import lzString from 'lz-string';
 const { decompressFromEncodedURIComponent, compressToEncodedURIComponent } = lzString;
 
-export function urlHash(defaultValue) {
+export function urlHash<T>(defaultValue: T) {
 	const { subscribe, set, update } = writable(defaultValue);
 
-	function decode(base64) {
+	function decode(base64: string) {
 		return JSON.parse(decompressFromEncodedURIComponent(base64));
 	}
 
-	function encode(value) {
+	function encode(value: T) {
 		return compressToEncodedURIComponent(JSON.stringify(value));
 	}
 
-	async function persistantSet(value) {
+	async function persistentSet(value: T) {
 		location.hash = await encode(value);
 
 		set(value);
 	}
 
-	function persistantUpdate(fn) {
+	function persistentUpdate(fn: Updater<T>) {
 		update((oldValue) => {
 			const newValue = fn(oldValue);
 
@@ -35,17 +35,17 @@ export function urlHash(defaultValue) {
 	}
 
 	return {
-		set: persistantSet,
-		update: persistantUpdate,
+		set: persistentSet,
+		update: persistentUpdate,
 		subscribe
 	};
 }
 
-export function persistable(key, defaultValue) {
+export function persistable<T>(key: string, defaultValue: T) {
 	let mounted = false;
 	const { subscribe, set, update } = writable(defaultValue);
 
-	const persistantSet = (value) => {
+	const persistentSet = (value: T) => {
 		set(value);
 
 		if (mounted) {
@@ -54,7 +54,7 @@ export function persistable(key, defaultValue) {
 		}
 	};
 
-	const persistantUpdate = (fn) => {
+	const persistentUpdate = (fn: Updater<T>) => {
 		update((oldValue) => {
 			const value = fn(oldValue);
 
@@ -70,15 +70,15 @@ export function persistable(key, defaultValue) {
 	onMount(() => {
 		mounted = true;
 		if (key in localStorage) {
-			const value = JSON.parse(localStorage.getItem(key));
+			const value = JSON.parse(localStorage.getItem(key) as string);
 
 			set(value);
 		}
 	});
 
 	return {
-		set: persistantSet,
-		update: persistantUpdate,
+		set: persistentSet,
+		update: persistentUpdate,
 		subscribe
 	};
 }
