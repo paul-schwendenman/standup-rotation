@@ -17,13 +17,24 @@
 			names = names;
 		};
 	}
+
+	function handleUpdate() {
+		return () => {
+			names = [...names];
+		};
+	}
 </script>
 
 <p>Names:</p>
 {#each names as name, index}
 	<div class="mb-1 flex items-center justify-between">
 		<span class="inline-flex items-center">
-			<input class="checkbox" bind:checked={name.active} type="checkbox" />
+			<input
+				class="checkbox"
+				bind:checked={name.active}
+				type="checkbox"
+				on:change={handleUpdate()}
+			/>
 			{#if name.active}
 				<span class="p-2" contenteditable="true" bind:textContent={name.name}>{name.name}</span>
 			{:else}

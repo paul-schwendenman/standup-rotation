@@ -4,7 +4,7 @@
 	import { setTheme, loadTheme } from '../utils';
 	import { themes, type Theme } from '$lib/types';
 
-	let currentTheme: Theme | null;
+	let currentTheme: Theme | null = null;
 
 	const handleSetTheme = (theme: Theme) => {
 		if (currentTheme !== theme) {
