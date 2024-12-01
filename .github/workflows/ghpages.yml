@@ -18,6 +18,13 @@ jobs:
           corepack enable
           pnpm install
           pnpm run build
+      - name: Ensure Remote is Set
+        run: |
+          if ! git remote | grep -q origin; then
+            git remote add origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy with gh-pages
         run: |
           git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
