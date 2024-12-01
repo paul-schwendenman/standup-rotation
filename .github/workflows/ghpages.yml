@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - 'master'
-  pull_request:
-    branches:
-      - 'master'
 
 jobs:
   build:
@@ -18,31 +15,10 @@ jobs:
           corepack enable
           pnpm install
           pnpm run build
-      - name: Ensure Remote is Set
-        run: |
-          if ! git remote | grep -q origin; then
-            git remote add origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy with gh-pages
         run: |
           git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
 
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            PR_NUMBER=${{ github.event.pull_request.number }}
-            npx gh-pages -d build -u "github-actions-bot <support+actions@github.com>" -b gh-pages -r origin --add ".pr-${PR_NUMBER}"
-          else
-            npx gh-pages -d build -u "github-actions-bot <support+actions@github.com>"
-          fi
+          npx gh-pages -d build -u "github-actions-bot <support+actions@github.com>"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Post Preview URL to PR
-        if: github.event_name == 'pull_request'
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            🚀 Preview your changes here: [Preview URL](https://your-username.github.io/.pr-${{ github.event.pull_request.number }})
