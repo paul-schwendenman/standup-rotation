@@ -1,9 +1,9 @@
 import { onMount } from 'svelte';
-import { writable, type Updater } from 'svelte/store';
+import { writable, type Updater, type Writable } from 'svelte/store';
 import lzString from 'lz-string';
 const { decompressFromEncodedURIComponent, compressToEncodedURIComponent } = lzString;
 
-export function urlHash<T>(defaultValue: T) {
+export function urlHash<T>(defaultValue: T): Writable<T> {
 	const { subscribe, set, update } = writable(defaultValue);
 
 	function decode(base64: string) {
@@ -41,7 +41,7 @@ export function urlHash<T>(defaultValue: T) {
 	};
 }
 
-export function persistable<T>(key: string, defaultValue: T) {
+export function persistable<T>(key: string, defaultValue: T): Writable<T> {
 	let mounted = false;
 	const { subscribe, set, update } = writable(defaultValue);
 

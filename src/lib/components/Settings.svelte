@@ -1,8 +1,10 @@
-<script>
+<script lang="ts">
 	import { writable } from 'svelte/store';
 	import EditNames from './EditNames.svelte';
+	import type { Writable } from 'svelte/store';
+	import type { Setting } from '$lib/types';
 
-	export let settings = writable({
+	export let settings: Writable<Setting> = writable({
 		welcome: '',
 		done: '',
 		duration: '1:00',

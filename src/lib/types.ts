@@ -3,6 +3,14 @@ export interface Person {
 	active: boolean;
 }
 
+export interface Setting {
+	welcome: string;
+	done: string;
+	duration: string;
+	showTimer: boolean;
+	names: Person[]
+}
+
 export const themes = [
 	'light',
 	'dark',

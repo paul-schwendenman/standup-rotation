@@ -1,10 +1,11 @@
-<script>
+<script lang="ts">
 	import Standup from './Standup.svelte';
 	import Settings from './Settings.svelte';
 	import { persistable, urlHash } from '../stores';
 	import { derived } from 'svelte/store';
 	import ThemeSelector from './ThemeSelector.svelte';
 	import GithubCorner from './GithubCorner.svelte';
+	import type { Setting } from '$lib/types';
 
 	// const settings1 = persistable("settings", {
 	//   welcome: "Welcome!",
@@ -14,7 +15,7 @@
 	//   names: []
 	// });
 
-	const settings = urlHash({
+	const settings = urlHash<Setting>({
 		welcome: 'Welcome!',
 		done: 'Done.',
 		duration: '1:00',
