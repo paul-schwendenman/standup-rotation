@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { Wheel } from "spin-wheel";
+    import { Wheel, type WheelProps } from "spin-wheel";
 	import { onMount } from "svelte";
 
-    export let props;
+    export let props: WheelProps;
     let wheelRef: HTMLElement;
     let wheel;
 
