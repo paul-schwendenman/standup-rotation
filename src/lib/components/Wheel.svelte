@@ -3,13 +3,12 @@
 	import { onMount } from "svelte";
 
     export let props;
-    let wheelRef: HTMLCanvasElement;
+    let wheelRef: HTMLElement;
     let wheel;
 
     onMount(() => {
         wheel = new Wheel(wheelRef, props)
     });
-
 </script>
 
 <div bind:this={wheelRef}></div>
