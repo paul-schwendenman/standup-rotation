@@ -1,9 +1,13 @@
 <script lang="ts">
 	import type { Person } from '$lib/types';
 
-	export let names: Person[] = [];
+	interface Props {
+		names?: Person[];
+	}
 
-	let newName = '';
+	let { names = $bindable([]) }: Props = $props();
+
+	let newName = $state('');
 
 	function addName() {
 		names = [...names, { name: newName, active: true }];
@@ -33,7 +37,7 @@
 				class="checkbox"
 				bind:checked={name.active}
 				type="checkbox"
-				on:change={handleUpdate()}
+				onchange={handleUpdate()}
 			/>
 			{#if name.active}
 				<span class="p-2" contenteditable="true" bind:textContent={name.name}>{name.name}</span>
@@ -44,7 +48,7 @@
 		<button
 			class="btn btn-circle justify-self-end uppercase"
 			aria-label="remove"
-			on:click={removeItem(index)}
+			onclick={removeItem(index)}
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -65,7 +69,7 @@
 
 <div class="input-group mt-1">
 	<input type="text" bind:value={newName} placeholder="name" class="input input-bordered" />
-	<button class="btn uppercase" on:click={addName}>Add</button>
+	<button class="btn uppercase" onclick={addName}>Add</button>
 </div>
 
 <style>

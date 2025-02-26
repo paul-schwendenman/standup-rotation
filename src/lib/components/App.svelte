@@ -31,13 +31,11 @@
 		[]
 	);
 
-	let showSettings = true;
+	let showSettings = $state(true);
 
 	function handleRunning(_event) {
 		showSettings = !showSettings;
 	}
-
-	$: validNames = $namesList.length > 0;
 </script>
 
 <GithubCorner />

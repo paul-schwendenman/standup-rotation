@@ -3,6 +3,11 @@
 	import { onMount } from 'svelte';
 	import { setTheme, loadTheme } from '../utils';
 	import { themes, type Theme } from '$lib/types';
+	interface Props {
+		children?: import('svelte').Snippet;
+	}
+
+	let { children }: Props = $props();
 
 	let currentTheme: Theme | null = null;
 
@@ -22,11 +27,11 @@
 </script>
 
 <div class="dropdown dropdown-top">
-	<button tabindex="-1" class="btn btn-accent m-1 uppercase"><slot></slot></button>
+	<button tabindex="-1" class="btn btn-accent m-1 uppercase">{@render children?.()}</button>
 	<div class="dropdown-content h-[70vh] w-52 overflow-y-auto rounded bg-base-200">
 		<div class="grid grid-cols-1 gap-3 p-3">
 			{#each themes as theme (theme)}
-				<button on:click={() => handleSetTheme(theme)}>
+				<button onclick={() => handleSetTheme(theme)}>
 					<ThemeExample {theme} />
 				</button>
 			{/each}

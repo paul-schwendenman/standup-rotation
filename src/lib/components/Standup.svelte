@@ -1,13 +1,24 @@
-<script>
+<script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { createEventDispatcher } from 'svelte';
 	import { shuffle } from '../utils';
 
-	export let showTimer = true;
-	export let time = '1:00';
-	export let welcome = 'Welcome to stand-up';
-	export let doneMessage = 'Done!';
 
-	export let names = [
+	interface Props {
+		showTimer?: boolean;
+		time?: string;
+		welcome?: string;
+		doneMessage?: string;
+		names?: any;
+	}
+
+	let {
+		showTimer = true,
+		time = '1:00',
+		welcome = 'Welcome to stand-up',
+		doneMessage = 'Done!',
+		names = [
 		'Adam',
 		'Adrian',
 		'Carson',
@@ -23,20 +34,21 @@
 		'Ryan',
 		'Sergiu',
 		'Tyler'
-	];
+	]
+	}: Props = $props();
 
 	const dispatch = createEventDispatcher();
 
 	var timeOutId;
 
-	let started = false;
-	let done = false;
-	let currentName;
-	let nextName;
-	let timer;
-	let namesList = [];
+	let started = $state(false);
+	let done = $state(false);
+	let currentName = $state();
+	let nextName = $state();
+	let timer = $state();
+	let namesList = $state([]);
 
-	let i = 0;
+	let i = $state(0);
 
 	function shuffleNames() {
 		namesList = [...shuffle(names)];
@@ -113,9 +125,11 @@
 		shuffleNames();
 	}
 
-	$: (() => {
-		shuffleNames();
-	})(names);
+	run(() => {
+		(() => {
+			shuffleNames();
+		})(names);
+	});
 </script>
 
 <div>
@@ -141,15 +155,15 @@
 
 	<section class="justify-left flex-wrap md:flex-nowrap md:justify-center">
 		{#if done}
-			<button on:click={reset} class="btn btn-primary uppercase">reset</button>
+			<button onclick={reset} class="btn btn-primary uppercase">reset</button>
 		{:else if !started}
-			<button on:click={start} class="btn btn-primary uppercase" disabled={names.length === 0}
+			<button onclick={start} class="btn btn-primary uppercase" disabled={names.length === 0}
 				>start</button
 			>
-			<button on:click={shuffleNames} class="btn uppercase">shuffle</button>
+			<button onclick={shuffleNames} class="btn uppercase">shuffle</button>
 		{:else}
-			<button on:click={next} class="btn btn-primary uppercase">next</button>
-			<button on:click={skip} class="btn uppercase" disabled={i + 1 === namesList.length}
+			<button onclick={next} class="btn btn-primary uppercase">next</button>
+			<button onclick={skip} class="btn uppercase" disabled={i + 1 === namesList.length}
 				>re-enqueue</button
 			>
 		{/if}

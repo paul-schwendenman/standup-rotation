@@ -4,17 +4,21 @@
 	import type { Writable } from 'svelte/store';
 	import type { Setting } from '$lib/types';
 
-	export let settings: Writable<Setting> = writable({
+	interface Props {
+		settings?: Writable<Setting>;
+	}
+
+	let { settings = writable({
 		welcome: '',
 		done: '',
 		duration: '1:00',
 		showTimer: true,
 		names: []
-	});
+	}) }: Props = $props();
 
-	$: validDuration = new RegExp('^[0-9]+:[0-5][0-9]$').test($settings.duration);
-	$: validWelcome = $settings.welcome.length > 0;
-	$: validDone = $settings.done.length > 0;
+	let validDuration = $derived(new RegExp('^[0-9]+:[0-5][0-9]$').test($settings.duration));
+	let validWelcome = $derived($settings.welcome.length > 0);
+	let validDone = $derived($settings.done.length > 0);
 </script>
 
 <div>
