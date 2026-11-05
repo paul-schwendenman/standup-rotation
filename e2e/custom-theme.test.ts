@@ -33,9 +33,12 @@ ${colors
 
 const htmlTheme = (page: Page) => page.locator('html');
 
+// "Create a theme" also contains "theme", so the footer trigger needs an exact match.
+const themeButton = (page: Page) => page.getByRole('button', { name: 'Theme', exact: true });
+
 async function openCreate(page: Page) {
-	await page.getByRole('button', { name: 'Theme' }).click();
-	await page.getByRole('tab', { name: 'Create' }).click();
+	await themeButton(page).click();
+	await page.getByRole('button', { name: 'Create a theme' }).click();
 }
 
 test('pasting a theme applies it, saves it, and survives a reload', async ({ page }) => {
@@ -51,7 +54,7 @@ test('pasting a theme applies it, saves it, and survives a reload', async ({ pag
 	await page.reload();
 	await expect(htmlTheme(page)).toHaveAttribute('data-theme', 'custom-harbor-night');
 
-	await page.getByRole('button', { name: 'Theme' }).click();
+	await themeButton(page).click();
 	await expect(page.getByRole('button', { name: 'harbor-night', pressed: true })).toBeVisible();
 });
 
@@ -75,7 +78,7 @@ test('editing keeps the theme; pasting the same name again reports a replace', a
 	await expect(page.getByRole('status')).toContainText('Saved to your themes.');
 
 	await page.reload();
-	await page.getByRole('button', { name: 'Theme' }).click();
+	await themeButton(page).click();
 	await page.getByRole('button', { name: 'Edit harbor-night' }).click();
 	await expect(page.getByLabel('Theme CSS')).toHaveValue(/harbor-night/);
 	await page.getByLabel('Theme CSS').fill(themeCss('harbor-night', 'oklch(35% 0.05 200)'));
@@ -104,7 +107,7 @@ test('removing the active custom theme falls back to the default', async ({ page
 	await page.getByLabel('Theme CSS').fill(themeCss('harbor-night'));
 	await expect(htmlTheme(page)).toHaveAttribute('data-theme', 'custom-harbor-night');
 
-	await page.getByRole('tab', { name: 'Themes' }).click();
+	await themeButton(page).click();
 	await page.getByRole('button', { name: 'Remove harbor-night' }).click();
 
 	await expect(htmlTheme(page)).toHaveAttribute('data-theme', '');
@@ -121,7 +124,7 @@ test('a team theme in the link applies unless the viewer picked their own', asyn
 	await page.goto('/');
 	await openCreate(page);
 	await page.getByLabel('Theme CSS').fill(themeCss('harbor-night'));
-	await page.getByRole('tab', { name: 'Themes' }).click();
+	await themeButton(page).click();
 	await page.getByRole('button', { name: 'Use harbor-night for this team' }).click();
 	await expect(page.getByRole('heading', { name: 'Team' })).toBeVisible();
 	const teamLink = page.url();
@@ -132,14 +135,14 @@ test('a team theme in the link applies unless the viewer picked their own', asyn
 	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'team');
 
 	// Picking a theme wins over the team theme, including after a reload.
-	await teammate.getByRole('button', { name: 'Theme' }).click();
+	await themeButton(teammate).click();
 	await teammate.getByRole('button', { name: 'dracula' }).click();
 	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'dracula');
 	await teammate.reload();
 	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'dracula');
 
 	// Un-picking it goes back to the team theme.
-	await teammate.getByRole('button', { name: 'Theme' }).click();
+	await themeButton(teammate).click();
 	await teammate.getByRole('button', { name: 'dracula' }).click();
 	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'team');
 });
@@ -148,7 +151,7 @@ test('stopping the team theme removes it from the link', async ({ page }) => {
 	await page.goto('/');
 	await openCreate(page);
 	await page.getByLabel('Theme CSS').fill(themeCss('harbor-night'));
-	await page.getByRole('tab', { name: 'Themes' }).click();
+	await themeButton(page).click();
 	await page.getByRole('button', { name: 'Use harbor-night for this team' }).click();
 	const withTeam = page.url();
 
@@ -176,7 +179,7 @@ test('a preset background applies, survives a reload, and is shared with the tea
 	await page.reload();
 	expect(await backgroundMask(page)).toContain('data:image/svg+xml');
 
-	await page.getByRole('button', { name: 'Theme' }).click();
+	await themeButton(page).click();
 	await page.getByRole('button', { name: 'Use harbor-night for this team' }).click();
 
 	const teammate = await (await browser.newContext()).newPage();
@@ -200,7 +203,7 @@ test('a small custom SVG is shared with the team', async ({ page, browser }) => 
 	await shareCustomSvg(page, '<svg viewBox="0 0 10 10"><rect width="2" height="2"/></svg>', 'Tile');
 	await expect(page.getByText('Small enough to share with your team')).toBeVisible();
 
-	await page.getByRole('tab', { name: 'Themes' }).click();
+	await themeButton(page).click();
 	await page.getByRole('button', { name: 'Use harbor-night for this team' }).click();
 	await expect(page.getByText('The background was too big to share.')).toHaveCount(0);
 
@@ -215,7 +218,7 @@ test('a big custom SVG stays personal', async ({ page, browser }) => {
 	await shareCustomSvg(page, big, 'Full screen');
 	await expect(page.getByText('Too big to share with your team')).toBeVisible();
 
-	await page.getByRole('tab', { name: 'Themes' }).click();
+	await themeButton(page).click();
 	await page.getByRole('button', { name: 'Use harbor-night for this team' }).click();
 	await expect(page.getByText('The background was too big to share.')).toBeVisible();
 
@@ -234,4 +237,44 @@ test('an unsafe SVG is rejected', async ({ page }) => {
 
 	await expect(page.getByText("Scripts and event handlers aren't allowed.")).toBeVisible();
 	expect(await backgroundMask(page)).toBe('none');
+});
+
+test('the background section is visible before a theme exists, and unlocks after a paste', async ({
+	page
+}) => {
+	await page.goto('/');
+	await openCreate(page);
+
+	await expect(page.getByRole('heading', { name: 'Background' })).toBeVisible();
+	await expect(page.getByRole('radio', { name: 'Snow' })).toBeDisabled();
+	await expect(page.getByText('Backgrounds are saved with a custom theme.')).toBeVisible();
+
+	await page.getByLabel('Theme CSS').fill(themeCss('harbor-night'));
+	await expect(page.getByRole('radio', { name: 'Snow' })).toBeEnabled();
+	await expect(page.getByText('Backgrounds are saved with a custom theme.')).toHaveCount(0);
+});
+
+test('the theme picker and create sheet work from the keyboard', async ({ page }) => {
+	await page.goto('/');
+
+	await themeButton(page).focus();
+	await expect(page.getByRole('button', { name: 'Create a theme' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('button', { name: 'Create a theme' })).toBeHidden();
+
+	await themeButton(page).focus();
+	await page.getByRole('button', { name: 'Create a theme' }).press('Enter');
+	await expect(page.getByLabel('Theme CSS')).toBeFocused();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog', { name: 'Create a theme' })).toHaveCount(0);
+	await expect(themeButton(page)).toBeFocused();
+});
+
+test('the closed theme panel does not cover the rotation buttons', async ({ page }) => {
+	await page.goto('/');
+	await themeButton(page).click();
+	await page.keyboard.press('Escape');
+
+	// Playwright refuses the click if another element would receive it.
+	await page.getByRole('button', { name: 'shuffle' }).click({ timeout: 2000 });
 });
