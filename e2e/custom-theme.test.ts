@@ -319,6 +319,44 @@ test('an unsafe SVG is rejected', async ({ page }) => {
 	expect(await backgroundMask(page)).toBe('none');
 });
 
+test('selecting text and releasing over the page keeps the sheet open', async ({ page }) => {
+	await page.goto('/');
+	await openCreate(page);
+	await pasteBox(page).fill('some text to select');
+
+	const box = (await pasteBox(page).boundingBox())!;
+	await page.mouse.move(box.x + 20, box.y + 12);
+	await page.mouse.down();
+	await page.mouse.move(100, 100, { steps: 5 });
+	await page.mouse.up();
+
+	await expect(page.getByRole('dialog', { name: 'Create your own' })).toBeVisible();
+});
+
+test('closing the sheet by accident keeps an unfinished Create', async ({ page }) => {
+	await page.goto('/');
+	await openCreate(page);
+	await page.getByLabel('Describe the look').fill('snowy cabin');
+	await pasteBox(page).fill('still waiting on the AI');
+
+	await page.getByText('Welcome!', { exact: true }).click();
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+
+	await themeButton(page).click();
+	await expect(page.getByRole('dialog', { name: 'Create your own' })).toBeVisible();
+	await expect(pasteBox(page)).toHaveValue('still waiting on the AI');
+	await expect(page.getByLabel('Describe the look')).toHaveValue('snowy cabin');
+});
+
+test('Done clears the paste so the next Create starts fresh', async ({ page }) => {
+	await page.goto('/');
+	await pasteTheme(page, themeCss('harbor-night'));
+	await page.getByRole('button', { name: 'Done' }).click();
+
+	await page.getByRole('button', { name: 'Create a theme' }).click();
+	await expect(pasteBox(page)).toHaveValue('');
+});
+
 test('the theme sheet works from the keyboard', async ({ page }) => {
 	await page.goto('/');
 

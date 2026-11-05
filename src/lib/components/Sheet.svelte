@@ -11,12 +11,23 @@
 
 	let el: HTMLDivElement;
 	const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-	const dispatch = createEventDispatcher<{ close: void }>();
+	// returnFocus is false for a click on the page, so focus stays on whatever was clicked.
+	const dispatch = createEventDispatcher<{ close: { returnFocus: boolean } }>();
 
 	export const focus = () => el.focus();
 
 	onMount(focus);
+
+	// Decided on press, not click, so a text selection dragged out of the sheet doesn't close it.
+	// The footer buttons that open sheets handle their own toggling.
+	const handleWindowPointerdown = (event: PointerEvent) => {
+		if (event.button !== 0 || !(event.target instanceof Element)) return;
+		if (el.contains(event.target) || event.target.closest('[data-sheet-trigger]')) return;
+		dispatch('close', { returnFocus: false });
+	};
 </script>
+
+<svelte:window on:pointerdown={handleWindowPointerdown} />
 
 <div
 	bind:this={el}
@@ -26,12 +37,16 @@
 	aria-labelledby="{id}-title"
 	class="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-base-300 bg-base-200 text-base-content outline-none"
 	transition:fly|global={{ x: 48, duration: reduceMotion ? 0 : 320, easing: expoOut }}
-	on:keydown={(e) => e.key === 'Escape' && dispatch('close')}
+	on:keydown={(e) => e.key === 'Escape' && dispatch('close', { returnFocus: true })}
 >
 	<header class="flex items-center gap-2 border-b border-base-300 px-5 py-3">
 		<slot name="before-title" />
 		<h2 id="{id}-title" class="grow text-lg font-semibold">{title}</h2>
-		<button class="btn btn-square btn-ghost" aria-label="Close" on:click={() => dispatch('close')}>
+		<button
+			class="btn btn-square btn-ghost"
+			aria-label="Close"
+			on:click={() => dispatch('close', { returnFocus: true })}
+		>
 			<svg
 				class="size-5"
 				viewBox="0 0 24 24"

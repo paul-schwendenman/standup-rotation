@@ -56,3 +56,25 @@ test('settings close and lock while a rotation runs', async ({ page }) => {
 	await expect(page.getByRole('dialog', { name: 'Settings' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Settings' })).toBeDisabled();
 });
+
+test('clicking the page closes a sheet and the click still goes through', async ({ page }) => {
+	await page.goto('/');
+	await page.getByRole('button', { name: 'Settings' }).click();
+	await page.getByPlaceholder('name').fill('Ada');
+	await page.getByRole('button', { name: 'Add' }).click();
+
+	await page.getByRole('button', { name: 'start' }).click();
+	await expect(page.getByRole('dialog', { name: 'Settings' })).toHaveCount(0);
+	await expect(page.getByRole('main')).toContainText('Ada');
+	await expect(page.getByRole('button', { name: 'next' })).toBeVisible();
+});
+
+test('the footer buttons toggle their sheet rather than close-and-reopen it', async ({ page }) => {
+	await page.goto('/');
+	const theme = page.getByRole('button', { name: 'Theme', exact: true });
+
+	await theme.click();
+	await expect(page.getByRole('dialog', { name: 'Theme' })).toBeVisible();
+	await theme.click();
+	await expect(page.getByRole('dialog', { name: 'Theme' })).toHaveCount(0);
+});

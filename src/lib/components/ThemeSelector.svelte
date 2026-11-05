@@ -142,9 +142,9 @@
 		else sheet.focus();
 	};
 
-	const closeSheet = () => {
+	const closeSheet = (returnFocus = true) => {
 		open = false;
-		trigger.focus();
+		if (returnFocus) trigger.focus();
 	};
 
 	const showLook = async () => {
@@ -201,12 +201,19 @@
 		handleSourceInput();
 	};
 
+	// Keeps an unfinished paste, so closing the sheet by accident doesn't lose it.
 	const handleCreate = (next: CreateKind) => {
 		kind = next;
+		openSheet('create');
+	};
+
+	// Done means the paste was used; the next Create starts fresh.
+	const handleDone = () => {
 		source = '';
+		description = '';
 		sessionName = null;
 		replaced = null;
-		openSheet('create');
+		showLook();
 	};
 
 	const handleEditCustom = (theme: CustomTheme) => {
@@ -255,7 +262,8 @@
 	class="btn m-1 uppercase btn-accent"
 	aria-expanded={open}
 	aria-controls="theme-sheet"
-	on:click={() => (open ? closeSheet() : openSheet('look'))}><slot></slot></button
+	data-sheet-trigger
+	on:click={() => (open ? closeSheet() : openSheet(view))}><slot></slot></button
 >
 
 {#if open}
@@ -264,7 +272,7 @@
 		id="theme-sheet"
 		title={view === 'create' ? 'Create your own' : 'Theme'}
 		showFooter={view === 'look'}
-		on:close={closeSheet}
+		on:close={(e) => closeSheet(e.detail.returnFocus)}
 	>
 		<svelte:fragment slot="before-title">
 			{#if view === 'create'}
@@ -525,7 +533,7 @@
 				{/if}
 
 				{#if result.theme || pasted?.svg}
-					<button class="btn self-start btn-neutral" on:click={showLook}>Done</button>
+					<button class="btn self-start btn-neutral" on:click={handleDone}>Done</button>
 				{/if}
 			</div>
 		{/if}

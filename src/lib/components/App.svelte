@@ -52,9 +52,9 @@
 		if (!settingsOpen) settingsTrigger.focus();
 	}
 
-	function closeSettings() {
+	function closeSettings(returnFocus = true) {
 		settingsOpen = false;
-		settingsTrigger.focus();
+		if (returnFocus) settingsTrigger.focus();
 	}
 </script>
 
@@ -74,6 +74,7 @@
 	<div class="mx-auto max-w-2xl p-2">
 		<button
 			bind:this={settingsTrigger}
+			data-sheet-trigger
 			class="btn uppercase btn-secondary"
 			disabled={!showSettings}
 			aria-expanded={settingsOpen}
@@ -89,7 +90,7 @@
 </footer>
 
 {#if settingsOpen}
-	<Sheet id="settings-sheet" title="Settings" on:close={closeSettings}>
+	<Sheet id="settings-sheet" title="Settings" on:close={(e) => closeSettings(e.detail.returnFocus)}>
 		<Settings {settings} />
 		<svelte:fragment slot="footer">
 			<p class="text-sm">
