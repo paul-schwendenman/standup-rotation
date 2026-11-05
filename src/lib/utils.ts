@@ -1,4 +1,5 @@
 import type { Theme } from './types';
+import type { CustomThemeId } from './customTheme';
 
 export function shuffle<T>(array: T[]): T[] {
 	let currentIndex = array.length,
@@ -14,8 +15,8 @@ export function shuffle<T>(array: T[]): T[] {
 	return array;
 }
 
-export const loadTheme = (): Theme | null => {
-	const theme = localStorage.getItem('theme') as Theme | null;
+export const loadTheme = (): Theme | CustomThemeId | null => {
+	const theme = localStorage.getItem('theme') as Theme | CustomThemeId | null;
 	if (theme) {
 		document.documentElement.setAttribute('data-theme', theme);
 	}
@@ -23,7 +24,7 @@ export const loadTheme = (): Theme | null => {
 	return theme;
 };
 
-export const setTheme = (theme: Theme | '') => {
+export const setTheme = (theme: Theme | CustomThemeId | '') => {
 	document.documentElement.setAttribute('data-theme', theme);
 	localStorage.setItem('theme', theme);
 };

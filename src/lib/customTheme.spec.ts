@@ -1,0 +1,74 @@
+import { describe, it, expect } from 'vitest';
+import { colorVars, parseTheme, themeCss } from './customTheme';
+
+const validTheme = `Sure! Here is your theme:
+
+@plugin "daisyui/theme" {
+  name: "Standup Night";
+  color-scheme: dark;
+${colorVars.map((key) => `  ${key}: oklch(50% 0.1 200);`).join('\n')}
+  --radius-box: 1rem;
+  --border: 1px;
+  --depth: 1;
+}`;
+
+describe('parseTheme', () => {
+	it('parses a complete theme and ignores surrounding text', () => {
+		const { theme, errors } = parseTheme(validTheme);
+
+		expect(errors).toEqual([]);
+		expect(theme?.name).toBe('standup-night');
+		expect(theme?.colorScheme).toBe('dark');
+		expect(theme?.vars['--color-primary']).toBe('oklch(50% 0.1 200)');
+		expect(theme?.vars['--radius-box']).toBe('1rem');
+	});
+
+	it('returns nothing for empty input', () => {
+		expect(parseTheme('   ')).toEqual({ theme: null, errors: [], warnings: [] });
+	});
+
+	it('reports missing colors', () => {
+		const { theme, errors } = parseTheme(validTheme.replace(/.*--color-info-content.*\n/, ''));
+
+		expect(theme).toBeNull();
+		expect(errors).toEqual(['Missing --color-info-content']);
+	});
+
+	it('rejects values that are not colors or lengths', () => {
+		const { theme, errors } = parseTheme(
+			validTheme
+				.replace('--color-accent: oklch(50% 0.1 200)', '--color-accent: red} body{display:none')
+				.replace('--border: 1px', '--border: thick')
+		);
+
+		expect(theme).toBeNull();
+		expect(errors).toHaveLength(2);
+	});
+
+	it('warns about unknown variables', () => {
+		const { theme, warnings } = parseTheme(
+			validTheme.replace('--depth: 1;', '--depth: 1;\n--color-highlight: #fff;')
+		);
+
+		expect(theme).not.toBeNull();
+		expect(warnings).toContain("--color-highlight isn't a daisyUI theme variable and was ignored.");
+	});
+
+	it('defaults to light when color-scheme is missing', () => {
+		const { theme, warnings } = parseTheme(validTheme.replace('color-scheme: dark;', ''));
+
+		expect(theme?.colorScheme).toBe('light');
+		expect(warnings).toContain('No color-scheme set; assuming light.');
+	});
+});
+
+describe('themeCss', () => {
+	it('scopes variables to the custom theme id', () => {
+		const { theme } = parseTheme(validTheme);
+		const css = themeCss([theme!]);
+
+		expect(css).toContain(':root[data-theme="custom-standup-night"]');
+		expect(css).toContain('color-scheme: dark;');
+		expect(css).toContain('--color-primary: oklch(50% 0.1 200);');
+	});
+});
