@@ -2,6 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import CopyButton from './CopyButton.svelte';
 	import {
+		SHARE_MAX_BYTES,
 		SIZE,
 		STRENGTH,
 		checkSvg,
@@ -9,6 +10,7 @@
 		fullPrompt,
 		presetIds,
 		presets,
+		svgBytes,
 		svgUrl,
 		tilePrompt,
 		type Layout,
@@ -58,6 +60,8 @@
 		update({ layout: next });
 	};
 
+	const formatKb = (bytes: number) => `${(bytes / 1024).toFixed(1)} KB`;
+
 	const tileSize = (id: PresetId) => (presets[id].layout === 'full' ? 'cover' : '18px 18px');
 	const tileRepeat = (id: PresetId) => (presets[id].layout === 'full' ? 'no-repeat' : 'repeat');
 </script>
@@ -106,7 +110,8 @@
 			{layout === 'full'
 				? 'Ask an AI for a full-screen illustration, then paste the SVG.'
 				: 'Ask an AI for a small seamless pattern, then paste the SVG.'}
-			Your own SVGs stay in this browser; team links only share the presets above.
+			SVGs up to {SHARE_MAX_BYTES / 1024} KB are shared with your team too; bigger ones only show for
+			you.
 		</p>
 		<div class="mt-2 flex flex-wrap items-center gap-2">
 			<CopyButton
@@ -124,6 +129,14 @@
 				spellcheck="false"
 				placeholder={svgPlaceholder}></textarea>
 		</label>
+		{#if svgCheck?.svg}
+			{@const bytes = svgBytes(svgCheck.svg)}
+			<p class="mt-2 text-xs" class:text-success={bytes <= SHARE_MAX_BYTES}>
+				{bytes <= SHARE_MAX_BYTES
+					? `✓ Small enough to share with your team (${formatKb(bytes)}).`
+					: `Too big to share with your team (${formatKb(bytes)} of ${formatKb(SHARE_MAX_BYTES)} max). It will only show for you.`}
+			</p>
+		{/if}
 		{#if svgCheck && !svgCheck.svg}
 			<ul class="mt-2 list-disc pl-5 text-xs text-error">
 				{#each svgCheck.errors as error (error)}

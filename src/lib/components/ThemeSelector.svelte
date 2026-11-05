@@ -37,7 +37,8 @@
 	$: teamTheme = parseTeamSetting($settings.theme);
 	$: teamDroppedBackground =
 		!!teamTheme &&
-		customThemes.find((t) => t.name === teamTheme.name)?.background?.pattern === 'custom';
+		!teamTheme.background &&
+		!!customThemes.find((t) => t.name === teamTheme.name)?.background;
 	$: if (mounted) {
 		injectCustomThemes(customThemes, teamTheme);
 		applyTheme(currentTheme || (teamTheme ? TEAM_THEME_ID : ''));
@@ -165,7 +166,7 @@
 						</p>
 						{#if teamDroppedBackground}
 							<p class="text-xs opacity-70">
-								Custom backgrounds aren't shared. The team gets {teamTheme.name}'s colors only.
+								The background was too big to share. The team gets {teamTheme.name}'s colors only.
 							</p>
 						{/if}
 					{/if}

@@ -4,7 +4,8 @@ import {
 	checkSvg,
 	defaultBackground,
 	parseBackground,
-	svgUrl
+	svgUrl,
+	tidySvg
 } from './background';
 
 const tile = '<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="1"/></svg>';
@@ -44,12 +45,25 @@ describe('checkSvg', () => {
 	});
 });
 
+describe('tidySvg', () => {
+	it('strips comments, metadata and extra whitespace', () => {
+		const messy = `<?xml version="1.0"?>
+<!-- made by an AI -->
+<svg viewBox="0 0 10 10">
+  <metadata>lots of editor junk</metadata>
+  <circle   cx="5" cy="5" r="2"/>
+</svg>`;
+
+		expect(tidySvg(messy)).toBe('<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="2"/></svg>');
+	});
+});
+
 describe('parseBackground', () => {
 	it('accepts presets and clamps numbers', () => {
 		expect(
 			parseBackground(
 				{ ...defaultBackground('snow'), size: 9999, strength: -5 },
-				{ allowCustom: false }
+				{ shareableOnly: true }
 			)
 		).toMatchObject({
 			pattern: 'snow',
@@ -58,22 +72,32 @@ describe('parseBackground', () => {
 		});
 	});
 
-	it('only accepts custom SVGs when allowed, and re-checks them', () => {
+	it('re-checks custom SVGs', () => {
 		const custom = { ...defaultBackground('dots'), pattern: 'custom', svg: tile };
 
-		expect(parseBackground(custom, { allowCustom: false })).toBeNull();
-		expect(parseBackground(custom, { allowCustom: true })?.svg).toContain('<circle');
+		expect(parseBackground(custom, { shareableOnly: true })?.svg).toContain('<circle');
 		expect(
 			parseBackground(
 				{ ...custom, svg: '<svg viewBox="0 0 1 1" onload="x()"></svg>' },
-				{ allowCustom: true }
+				{ shareableOnly: false }
 			)
 		).toBeNull();
 	});
 
+	it('only accepts small custom SVGs when shareableOnly', () => {
+		const big = {
+			...defaultBackground('hills'),
+			pattern: 'custom',
+			svg: `<svg viewBox="0 0 1 1">${'<rect/>'.repeat(400)}</svg>`
+		};
+
+		expect(parseBackground(big, { shareableOnly: false })).not.toBeNull();
+		expect(parseBackground(big, { shareableOnly: true })).toBeNull();
+	});
+
 	it('rejects junk', () => {
-		expect(parseBackground('dots', { allowCustom: true })).toBeNull();
-		expect(parseBackground({ pattern: 'nope' }, { allowCustom: true })).toBeNull();
+		expect(parseBackground('dots', { shareableOnly: false })).toBeNull();
+		expect(parseBackground({ pattern: 'nope' }, { shareableOnly: false })).toBeNull();
 	});
 });
 

@@ -1,4 +1,4 @@
-import { backgroundDecls, parseBackground, type ThemeBackground } from './background';
+import { backgroundDecls, isShareable, parseBackground, type ThemeBackground } from './background';
 import { contrastRatio } from './contrast';
 
 export interface CustomTheme {
@@ -191,7 +191,7 @@ export function loadCustomThemes(): CustomTheme[] {
 		return stored
 			.map((item) => {
 				const theme = typeof item?.source === 'string' ? parseTheme(item.source).theme : null;
-				const background = parseBackground(item?.background, { allowCustom: true });
+				const background = parseBackground(item?.background, { shareableOnly: false });
 				return theme && background ? { ...theme, background } : theme;
 			})
 			.filter((theme): theme is CustomTheme => theme !== null);
@@ -201,16 +201,17 @@ export function loadCustomThemes(): CustomTheme[] {
 }
 
 export function toTeamSetting(theme: CustomTheme): TeamThemeSetting {
-	const background = theme.background?.pattern === 'custom' ? undefined : theme.background;
+	const background =
+		theme.background && isShareable(theme.background) ? theme.background : undefined;
 	return { source: toSource(theme), background };
 }
 
-// Team links only ever get preset backgrounds; a custom SVG in a link is dropped.
+// Team links carry presets and small custom SVGs; anything bigger in a link is dropped.
 export function parseTeamSetting(setting: TeamThemeSetting | undefined): CustomTheme | null {
 	const theme =
 		setting && typeof setting.source === 'string' ? parseTheme(setting.source).theme : null;
 	if (!theme) return null;
-	const background = parseBackground(setting?.background, { allowCustom: false });
+	const background = parseBackground(setting?.background, { shareableOnly: true });
 	return background ? { ...theme, background } : theme;
 }
 

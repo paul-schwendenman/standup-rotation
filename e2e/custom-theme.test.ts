@@ -185,19 +185,39 @@ test('a preset background applies, survives a reload, and is shared with the tea
 	expect(await backgroundMask(teammate)).toContain('data:image/svg+xml');
 });
 
-test('a custom SVG background stays personal', async ({ page, browser }) => {
+async function shareCustomSvg(page: Page, svg: string, layout: 'Tile' | 'Full screen') {
 	await page.goto('/');
 	await openCreate(page);
 	await page.getByLabel('Theme CSS').fill(themeCss('harbor-night'));
+	await page.getByRole('radio', { name: 'Hills' }).click();
+	await page.getByRole('radio', { name: layout }).click();
 	await page.getByText('Use your own SVG').click();
-	await page
-		.getByLabel('Pattern SVG')
-		.fill('<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="2"/></svg>');
-	expect(await backgroundMask(page)).toContain('circle');
+	await page.getByLabel('Pattern SVG').fill(svg);
+	expect(await backgroundMask(page)).toContain('rect');
+}
+
+test('a small custom SVG is shared with the team', async ({ page, browser }) => {
+	await shareCustomSvg(page, '<svg viewBox="0 0 10 10"><rect width="2" height="2"/></svg>', 'Tile');
+	await expect(page.getByText('Small enough to share with your team')).toBeVisible();
 
 	await page.getByRole('tab', { name: 'Themes' }).click();
 	await page.getByRole('button', { name: 'Use harbor-night for this team' }).click();
-	await expect(page.getByText("Custom backgrounds aren't shared.")).toBeVisible();
+	await expect(page.getByText('The background was too big to share.')).toHaveCount(0);
+
+	const teammate = await (await browser.newContext()).newPage();
+	await teammate.goto(page.url());
+	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'team');
+	expect(await backgroundMask(teammate)).toContain('rect');
+});
+
+test('a big custom SVG stays personal', async ({ page, browser }) => {
+	const big = `<svg viewBox="0 0 100 100">${'<rect x="1" y="2" width="3" height="4"/>'.repeat(80)}</svg>`;
+	await shareCustomSvg(page, big, 'Full screen');
+	await expect(page.getByText('Too big to share with your team')).toBeVisible();
+
+	await page.getByRole('tab', { name: 'Themes' }).click();
+	await page.getByRole('button', { name: 'Use harbor-night for this team' }).click();
+	await expect(page.getByText('The background was too big to share.')).toBeVisible();
 
 	const teammate = await (await browser.newContext()).newPage();
 	await teammate.goto(page.url());

@@ -124,7 +124,7 @@ describe('toSource', () => {
 });
 
 describe('team settings', () => {
-	it('shares preset backgrounds but drops custom SVGs', () => {
+	it('shares presets and small custom SVGs but drops big ones', () => {
 		const { theme } = parseTheme(validTheme);
 		const preset = { ...theme!, background: defaultBackground('snow') };
 		const custom = {
@@ -136,18 +136,27 @@ describe('team settings', () => {
 			}
 		};
 
+		const big = {
+			...custom,
+			background: {
+				...custom.background,
+				svg: `<svg viewBox="0 0 1 1">${'<rect/>'.repeat(400)}</svg>`
+			}
+		};
+
 		expect(toTeamSetting(preset).background?.pattern).toBe('snow');
-		expect(toTeamSetting(custom).background).toBeUndefined();
+		expect(toTeamSetting(custom).background?.pattern).toBe('custom');
+		expect(toTeamSetting(big).background).toBeUndefined();
 	});
 
-	it('ignores a custom SVG smuggled into a link', () => {
+	it('drops an oversized custom SVG from a link but keeps the colors', () => {
 		const { theme } = parseTheme(validTheme);
 		const parsed = parseTeamSetting({
 			source: toSource(theme!),
 			background: {
-				...defaultBackground('dots'),
+				...defaultBackground('hills'),
 				pattern: 'custom',
-				svg: '<svg viewBox="0 0 1 1"/>'
+				svg: `<svg viewBox="0 0 1 1">${'<rect/>'.repeat(400)}</svg>`
 			}
 		});
 

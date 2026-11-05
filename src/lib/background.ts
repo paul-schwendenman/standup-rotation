@@ -7,7 +7,7 @@ export type PresetId = (typeof presetIds)[number];
 
 export interface ThemeBackground {
 	pattern: PresetId | 'custom';
-	// Only for pattern 'custom'. Custom SVGs stay in this browser and are never shared in team links.
+	// Only for pattern 'custom'. Shared in team links only if it's at most SHARE_MAX_BYTES.
 	svg?: string;
 	layout: Layout;
 	size: number;
@@ -49,6 +49,21 @@ export const presets: Record<PresetId, { label: string; layout: Layout; svg: str
 export const SIZE = { min: 16, max: 160, default: 56 };
 export const STRENGTH = { min: 2, max: 40, default: 8 };
 const MAX_KB: Record<Layout, number> = { tile: 8, full: 32 };
+// Custom SVGs this small can ride along in a team link without making it unwieldy.
+export const SHARE_MAX_BYTES = 2048;
+
+export const svgBytes = (svg: string) => new TextEncoder().encode(svg).length;
+
+// Drops the parts of typical editor/AI output that don't affect the picture.
+export const tidySvg = (text: string) =>
+	text
+		.replace(/<\?xml[\s\S]*?\?>/gi, '')
+		.replace(/<!DOCTYPE[\s\S]*?>/gi, '')
+		.replace(/<!--[\s\S]*?-->/g, '')
+		.replace(/<metadata[\s\S]*?<\/metadata>/gi, '')
+		.replace(/>\s+</g, '><')
+		.replace(/\s+/g, ' ')
+		.trim();
 
 export const defaultBackground = (pattern: PresetId): ThemeBackground => ({
 	pattern,
@@ -60,7 +75,7 @@ export const defaultBackground = (pattern: PresetId): ThemeBackground => ({
 });
 
 export function checkSvg(text: string, layout: Layout): { svg: string | null; errors: string[] } {
-	const svg = text.trim();
+	const svg = tidySvg(text);
 	const errors: string[] = [];
 
 	if (!/^<svg[\s>]/i.test(svg) || !/<\/svg>$/i.test(svg)) {
@@ -73,8 +88,8 @@ export function checkSvg(text: string, layout: Layout): { svg: string | null; er
 	if (/(href|src)\s*=\s*["'](?!#)/i.test(svg)) {
 		errors.push("Links to other files aren't allowed; draw the shapes inline.");
 	}
-	if (svg.length > MAX_KB[layout] * 1024) {
-		errors.push(`Too big: ${Math.ceil(svg.length / 1024)} KB (max ${MAX_KB[layout]} KB).`);
+	if (svgBytes(svg) > MAX_KB[layout] * 1024) {
+		errors.push(`Too big: ${Math.ceil(svgBytes(svg) / 1024)} KB (max ${MAX_KB[layout]} KB).`);
 	}
 
 	if (errors.length > 0) return { svg: null, errors };
@@ -92,13 +107,13 @@ const oneOf = <T extends string>(value: unknown, options: readonly T[], fallback
 // Validates a background read from localStorage or a link; anything unexpected becomes null.
 export function parseBackground(
 	value: unknown,
-	{ allowCustom }: { allowCustom: boolean }
+	{ shareableOnly }: { shareableOnly: boolean }
 ): ThemeBackground | null {
 	if (!value || typeof value !== 'object') return null;
 	const raw = value as Record<string, unknown>;
 
 	const isPreset = presetIds.includes(raw.pattern as PresetId);
-	if (!isPreset && !(allowCustom && raw.pattern === 'custom')) return null;
+	if (!isPreset && raw.pattern !== 'custom') return null;
 
 	const layout = oneOf(raw.layout, ['tile', 'full'] as const, 'tile');
 	const background: ThemeBackground = {
@@ -116,8 +131,12 @@ export function parseBackground(
 		background.svg = svg;
 	}
 
+	if (shareableOnly && !isShareable(background)) return null;
 	return background;
 }
+
+export const isShareable = (background: ThemeBackground) =>
+	background.pattern !== 'custom' || svgBytes(background.svg ?? '') <= SHARE_MAX_BYTES;
 
 export const backgroundSvg = (background: ThemeBackground) =>
 	background.pattern === 'custom' ? (background.svg ?? '') : presets[background.pattern].svg;
