@@ -63,8 +63,8 @@
 	</div>
 {/each}
 
-<div class="input-group mt-1">
-	<input type="text" bind:value={newName} placeholder="name" class="input input-bordered" />
+<div class="mt-1">
+	<input type="text" bind:value={newName} placeholder="name" class="input" />
 	<button class="btn uppercase" on:click={addName}>Add</button>
 </div>
 

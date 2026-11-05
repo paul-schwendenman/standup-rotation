@@ -55,7 +55,7 @@
 		<div class="modal-box">
 			<Settings {settings} />
 			<div class="modal-action">
-				<label for="settings-modal" class="btn btn-secondary uppercase">Save</label>
+				<label for="settings-modal" class="btn uppercase btn-secondary">Save</label>
 			</div>
 		</div>
 	</div>
@@ -64,7 +64,7 @@
 	<div class="mx-auto max-w-2xl p-2">
 		<label
 			for="settings-modal"
-			class="modal-button btn btn-secondary uppercase"
+			class="modal-button btn uppercase btn-secondary"
 			class:btn-disabled={!showSettings}
 		>
 			Settings

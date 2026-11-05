@@ -1,10 +1,12 @@
 import adapter from '@sveltejs/adapter-static';
+import tailwindcss from '@tailwindcss/vite';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
 	plugins: [
+		tailwindcss(),
 		sveltekit({
 			// Consult https://svelte.dev/docs/kit/integrations
 			// for more information about preprocessors

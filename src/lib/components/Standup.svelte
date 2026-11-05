@@ -140,14 +140,14 @@
 
 	<section class="justify-left flex-wrap md:flex-nowrap md:justify-center">
 		{#if done}
-			<button on:click={reset} class="btn btn-primary uppercase">reset</button>
+			<button on:click={reset} class="btn uppercase btn-primary">reset</button>
 		{:else if !started}
-			<button on:click={start} class="btn btn-primary uppercase" disabled={names.length === 0}
+			<button on:click={start} class="btn uppercase btn-primary" disabled={names.length === 0}
 				>start</button
 			>
 			<button on:click={() => shuffleNames()} class="btn uppercase">shuffle</button>
 		{:else}
-			<button on:click={next} class="btn btn-primary uppercase">next</button>
+			<button on:click={next} class="btn uppercase btn-primary">next</button>
 			<button on:click={skip} class="btn uppercase" disabled={i + 1 === namesList.length}
 				>re-enqueue</button
 			>
@@ -156,6 +156,8 @@
 </div>
 
 <style lang="postcss">
+	@reference 'tailwindcss';
+
 	section {
 		@apply mb-8 flex items-baseline gap-2;
 	}

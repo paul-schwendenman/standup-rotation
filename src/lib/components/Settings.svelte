@@ -28,7 +28,7 @@
 		<input
 			bind:value={$settings.duration}
 			type="text"
-			class="input input-bordered"
+			class="input"
 			pattern="^[0-9]+:[0-5][0-9]$"
 			class:input-error={!validDuration}
 			disabled={!$settings.showTimer}
@@ -40,7 +40,7 @@
 		<input
 			bind:value={$settings.welcome}
 			type="text"
-			class="input input-bordered"
+			class="input"
 			class:input-error={!validWelcome}
 			placeholder="Message shown at beginning"
 		/>
@@ -51,7 +51,7 @@
 		<input
 			bind:value={$settings.done}
 			type="text"
-			class="input input-bordered"
+			class="input"
 			class:input-error={!validDone}
 			placeholder="Message to show at end of rotation"
 		/>
@@ -64,6 +64,11 @@
 	label {
 		display: flex;
 		justify-content: space-between;
+		gap: 1rem;
 		margin-bottom: 1rem;
+	}
+
+	label > span {
+		white-space: nowrap;
 	}
 </style>

@@ -22,8 +22,8 @@
 </script>
 
 <div class="dropdown dropdown-top">
-	<button tabindex="-1" class="btn btn-accent m-1 uppercase"><slot></slot></button>
-	<div class="dropdown-content h-[70vh] w-52 overflow-y-auto rounded bg-base-200">
+	<button tabindex="-1" class="btn m-1 uppercase btn-accent"><slot></slot></button>
+	<div class="dropdown-content h-[70vh] w-52 overflow-y-auto rounded-sm bg-base-200">
 		<div class="grid grid-cols-1 gap-3 p-3">
 			{#each themes as theme (theme)}
 				<button on:click={() => handleSetTheme(theme)}>
