@@ -6,7 +6,6 @@
 	import {
 		aiPrompt,
 		injectCustomThemes,
-		isCustomThemeId,
 		loadCustomThemes,
 		parseTheme,
 		saveCustomThemes,
@@ -17,7 +16,7 @@
 
 	let currentTheme: Theme | CustomThemeId | null = null;
 	let customThemes: CustomTheme[] = [];
-	let tab: 'built-in' | 'custom' = 'built-in';
+	let tab: 'themes' | 'create' = 'themes';
 	let source = '';
 	let copied = false;
 
@@ -48,9 +47,9 @@
 		currentTheme = themeId(theme.name);
 	};
 
-	const handleSelectCustom = (theme: CustomTheme) => {
-		handleSetTheme(themeId(theme.name));
-		source = currentTheme ? theme.source : '';
+	const handleEditCustom = (theme: CustomTheme) => {
+		source = theme.source;
+		tab = 'create';
 	};
 
 	const handleRemoveCustom = (theme: CustomTheme) => {
@@ -58,6 +57,8 @@
 		if (currentTheme === themeId(theme.name)) {
 			setTheme('');
 			currentTheme = null;
+		}
+		if (result.theme?.name === theme.name) {
 			source = '';
 		}
 	};
@@ -72,11 +73,6 @@
 		customThemes = loadCustomThemes();
 		injectCustomThemes(customThemes);
 		currentTheme = loadTheme();
-
-		if (isCustomThemeId(currentTheme)) {
-			tab = 'custom';
-			source = customThemes.find((t) => themeId(t.name) === currentTheme)?.source ?? '';
-		}
 	});
 </script>
 
@@ -87,22 +83,43 @@
 			<button
 				role="tab"
 				class="tab"
-				class:tab-active={tab === 'built-in'}
-				aria-selected={tab === 'built-in'}
-				on:click={() => (tab = 'built-in')}>Built-in</button
+				class:tab-active={tab === 'themes'}
+				aria-selected={tab === 'themes'}
+				on:click={() => (tab = 'themes')}>Themes</button
 			>
 			<button
 				role="tab"
 				class="tab"
-				class:tab-active={tab === 'custom'}
-				aria-selected={tab === 'custom'}
-				on:click={() => (tab = 'custom')}>Custom</button
+				class:tab-active={tab === 'create'}
+				aria-selected={tab === 'create'}
+				on:click={() => (tab = 'create')}>Create</button
 			>
 		</div>
 
 		<div class="overflow-y-auto">
-			{#if tab === 'built-in'}
+			{#if tab === 'themes'}
 				<div class="grid grid-cols-1 gap-3 p-3">
+					{#if customThemes.length > 0}
+						<h3 class="text-xs font-bold tracking-wider uppercase opacity-70">Custom</h3>
+						{#each customThemes as theme (theme.name)}
+							<div class="flex items-center gap-1">
+								<button class="grow" on:click={() => handleSetTheme(themeId(theme.name))}>
+									<ThemeExample theme={themeId(theme.name)} label={theme.name} />
+								</button>
+								<button
+									class="btn btn-square btn-ghost btn-sm"
+									aria-label="Edit {theme.name}"
+									on:click={() => handleEditCustom(theme)}>✎</button
+								>
+								<button
+									class="btn btn-square btn-ghost btn-sm"
+									aria-label="Remove {theme.name}"
+									on:click={() => handleRemoveCustom(theme)}>✕</button
+								>
+							</div>
+						{/each}
+						<h3 class="text-xs font-bold tracking-wider uppercase opacity-70">Built-in</h3>
+					{/if}
 					{#each themes as theme (theme)}
 						<button on:click={() => handleSetTheme(theme)}>
 							<ThemeExample {theme} />
@@ -111,19 +128,6 @@
 				</div>
 			{:else}
 				<div class="flex flex-col gap-3 p-3 text-sm">
-					{#each customThemes as theme (theme.name)}
-						<div class="flex items-center gap-2">
-							<button class="grow" on:click={() => handleSelectCustom(theme)}>
-								<ThemeExample theme={themeId(theme.name)} label={theme.name} />
-							</button>
-							<button
-								class="btn btn-square btn-ghost btn-sm"
-								aria-label="Remove {theme.name}"
-								on:click={() => handleRemoveCustom(theme)}>✕</button
-							>
-						</div>
-					{/each}
-
 					<p>
 						Paste a daisyUI theme. It applies as soon as it's valid and is saved in this browser.
 					</p>
@@ -168,6 +172,7 @@
 						>
 							{#if result.theme}
 								<span class="font-semibold">Applied “{result.theme.name}”</span>
+								<span>Saved to your themes.</span>
 							{:else}
 								<span class="font-semibold">
 									Not applied: {result.errors.length}
