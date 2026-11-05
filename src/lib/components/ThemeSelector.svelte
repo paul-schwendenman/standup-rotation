@@ -2,9 +2,8 @@
 	import ThemeExample from './ThemeExample.svelte';
 	import BackgroundEditor from './BackgroundEditor.svelte';
 	import CopyButton from './CopyButton.svelte';
-	import { onMount, tick } from 'svelte';
-	import { fly } from 'svelte/transition';
-	import { expoOut } from 'svelte/easing';
+	import Sheet from './Sheet.svelte';
+	import { createEventDispatcher, onMount, tick } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import { applyTheme, setTheme, loadTheme } from '../utils';
 	import { themes, type Setting, type Theme } from '#lib/types.ts';
@@ -30,6 +29,8 @@
 	} from '#lib/customTheme.ts';
 
 	export let settings: Writable<Setting>;
+	// Bound by App so only one sheet is open at a time.
+	export let open = false;
 
 	// This person's picks. Unset (null / undefined) means the team's choice from the link applies.
 	let currentTheme: Theme | CustomThemeId | null = null;
@@ -37,14 +38,12 @@
 	let mounted = false;
 	let customThemes: CustomTheme[] = [];
 
-	// The sheet sits beside the rotation so the page behind it is the live preview.
-	let open = false;
 	let view: 'look' | 'create' = 'look';
 	let trigger: HTMLButtonElement;
-	let sheetEl: HTMLDivElement;
+	let sheet: Sheet;
 	let describeEl: HTMLInputElement;
 	let sourceEl: HTMLTextAreaElement;
-	let reduceMotion = false;
+	const dispatch = createEventDispatcher<{ open: void }>();
 
 	let description = '';
 	let source = '';
@@ -96,9 +95,10 @@
 	const openSheet = async (next: 'look' | 'create') => {
 		open = true;
 		view = next;
+		dispatch('open');
 		await tick();
 		if (next === 'create') (source ? sourceEl : describeEl).focus();
-		else sheetEl.focus();
+		else sheet.focus();
 	};
 
 	const closeSheet = () => {
@@ -109,7 +109,7 @@
 	const showLook = async () => {
 		view = 'look';
 		await tick();
-		sheetEl.focus();
+		sheet.focus();
 	};
 
 	const handleSetTheme = (theme: Theme | CustomThemeId) => {
@@ -197,7 +197,6 @@
 		customThemes = loadCustomThemes();
 		currentTheme = loadTheme();
 		background = loadBackground();
-		reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 		mounted = true;
 	});
 </script>
@@ -211,17 +210,14 @@
 >
 
 {#if open}
-	<div
-		bind:this={sheetEl}
+	<Sheet
+		bind:this={sheet}
 		id="theme-sheet"
-		role="dialog"
-		tabindex="-1"
-		aria-labelledby="theme-sheet-title"
-		class="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-base-300 bg-base-200 text-base-content outline-none"
-		transition:fly={{ x: 48, duration: reduceMotion ? 0 : 320, easing: expoOut }}
-		on:keydown={(e) => e.key === 'Escape' && closeSheet()}
+		title={view === 'create' ? 'Create a theme' : 'Theme'}
+		showFooter={view === 'look'}
+		on:close={closeSheet}
 	>
-		<header class="flex items-center gap-2 border-b border-base-300 px-5 py-3">
+		<svelte:fragment slot="before-title">
 			{#if view === 'create'}
 				<button
 					class="btn -ml-2 btn-square btn-ghost"
@@ -240,24 +236,10 @@
 					>
 				</button>
 			{/if}
-			<h2 id="theme-sheet-title" class="grow text-lg font-semibold">
-				{view === 'create' ? 'Create a theme' : 'Theme'}
-			</h2>
-			<button class="btn btn-square btn-ghost" aria-label="Close" on:click={closeSheet}>
-				<svg
-					class="size-5"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg
-				>
-			</button>
-		</header>
+		</svelte:fragment>
 
 		{#if view === 'look'}
-			<div class="flex flex-col gap-8 overflow-y-auto px-5 pt-5 pb-8">
+			<div class="flex flex-col gap-8">
 				{#if team}
 					<section
 						class="flex flex-col gap-2 rounded-box bg-base-100 p-4"
@@ -357,27 +339,8 @@
 					on:change={(e) => storeBackground(e.detail)}
 				/>
 			</div>
-
-			<footer class="flex flex-col gap-2 border-t border-base-300 px-5 py-4">
-				<button
-					class="btn w-full btn-neutral"
-					disabled={isTeamLook || !proposed}
-					on:click={handleShareWithTeam}>Use this look for the team</button
-				>
-				<p class="text-sm opacity-75">
-					{#if !proposed}
-						Pick a theme or background to share it with the team.
-					{:else if isTeamLook}
-						This is the team's look.
-					{:else if backgroundTooBig}
-						Your background is too big to share. The team gets the theme only.
-					{:else}
-						Saves your theme and background in this page's link for the whole team.
-					{/if}
-				</p>
-			</footer>
 		{:else}
-			<div class="flex flex-col gap-6 overflow-y-auto px-5 pt-5 pb-8">
+			<div class="flex flex-col gap-6">
 				<p>
 					One prompt gets you colors and a matching background. Paste the reply and both apply right
 					away.
@@ -479,5 +442,24 @@
 				{/if}
 			</div>
 		{/if}
-	</div>
+
+		<svelte:fragment slot="footer">
+			<button
+				class="btn w-full btn-neutral"
+				disabled={isTeamLook || !proposed}
+				on:click={handleShareWithTeam}>Use this look for the team</button
+			>
+			<p class="text-sm opacity-75">
+				{#if !proposed}
+					Pick a theme or background to share it with the team.
+				{:else if isTeamLook}
+					This is the team's look.
+				{:else if backgroundTooBig}
+					Your background is too big to share. The team gets the theme only.
+				{:else}
+					Saves your theme and background in this page's link for the whole team.
+				{/if}
+			</p>
+		</svelte:fragment>
+	</Sheet>
 {/if}

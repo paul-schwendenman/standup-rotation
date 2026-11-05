@@ -63,8 +63,8 @@
 	</div>
 {/each}
 
-<div class="mt-1">
-	<input type="text" bind:value={newName} placeholder="name" class="input" />
+<div class="mt-2 flex gap-2">
+	<input type="text" bind:value={newName} placeholder="name" class="input grow" />
 	<button class="btn uppercase" on:click={addName}>Add</button>
 </div>
 

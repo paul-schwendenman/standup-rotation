@@ -18,7 +18,7 @@
 </script>
 
 <div>
-	<label>
+	<label class="inline">
 		<span>Enable timer:</span>
 		<input bind:checked={$settings.showTimer} type="checkbox" class="toggle" />
 	</label>
@@ -28,7 +28,7 @@
 		<input
 			bind:value={$settings.duration}
 			type="text"
-			class="input"
+			class="input w-full"
 			pattern="^[0-9]+:[0-5][0-9]$"
 			class:input-error={!validDuration}
 			disabled={!$settings.showTimer}
@@ -40,7 +40,7 @@
 		<input
 			bind:value={$settings.welcome}
 			type="text"
-			class="input"
+			class="input w-full"
 			class:input-error={!validWelcome}
 			placeholder="Message shown at beginning"
 		/>
@@ -51,7 +51,7 @@
 		<input
 			bind:value={$settings.done}
 			type="text"
-			class="input"
+			class="input w-full"
 			class:input-error={!validDone}
 			placeholder="Message to show at end of rotation"
 		/>
@@ -63,12 +63,14 @@
 <style>
 	label {
 		display: flex;
-		justify-content: space-between;
-		gap: 1rem;
+		flex-direction: column;
+		gap: 0.25rem;
 		margin-bottom: 1rem;
 	}
 
-	label > span {
-		white-space: nowrap;
+	label.inline {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
 	}
 </style>
