@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ThemeExample from './ThemeExample.svelte';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { setTheme, loadTheme } from '../utils';
 	import { themes, type Theme } from '#lib/types.ts';
 	import {
@@ -19,6 +19,11 @@
 	let tab: 'themes' | 'create' = 'themes';
 	let source = '';
 	let copied = false;
+	let copyFailed = false;
+	let promptEl: HTMLTextAreaElement;
+	// The theme this Create session is saving to, so edits to it aren't reported as replacing it.
+	let sessionName: string | null = null;
+	let replaced: string | null = null;
 
 	$: result = parseTheme(source);
 
@@ -39,8 +44,15 @@
 	};
 
 	const handleSourceInput = () => {
+		if (source.trim() === '') sessionName = null;
+
 		const { theme } = parseTheme(source);
 		if (!theme) return;
+
+		if (theme.name !== sessionName) {
+			replaced = customThemes.some((t) => t.name === theme.name) ? theme.name : null;
+			sessionName = theme.name;
+		}
 
 		storeCustomThemes([...customThemes.filter((t) => t.name !== theme.name), theme]);
 		setTheme(themeId(theme.name));
@@ -49,6 +61,8 @@
 
 	const handleEditCustom = (theme: CustomTheme) => {
 		source = theme.source;
+		sessionName = theme.name;
+		replaced = null;
 		tab = 'create';
 	};
 
@@ -64,9 +78,15 @@
 	};
 
 	const copyPrompt = async () => {
-		await navigator.clipboard.writeText(aiPrompt);
-		copied = true;
-		setTimeout(() => (copied = false), 1500);
+		try {
+			await navigator.clipboard.writeText(aiPrompt);
+			copied = true;
+			setTimeout(() => (copied = false), 1500);
+		} catch {
+			copyFailed = true;
+			await tick();
+			promptEl.select();
+		}
 	};
 
 	onMount(() => {
@@ -103,8 +123,16 @@
 						<h3 class="text-xs font-bold tracking-wider uppercase opacity-70">Custom</h3>
 						{#each customThemes as theme (theme.name)}
 							<div class="flex items-center gap-1">
-								<button class="grow" on:click={() => handleSetTheme(themeId(theme.name))}>
-									<ThemeExample theme={themeId(theme.name)} label={theme.name} />
+								<button
+									class="grow"
+									aria-pressed={currentTheme === themeId(theme.name)}
+									on:click={() => handleSetTheme(themeId(theme.name))}
+								>
+									<ThemeExample
+										theme={themeId(theme.name)}
+										label={theme.name}
+										active={currentTheme === themeId(theme.name)}
+									/>
 								</button>
 								<button
 									class="btn btn-square btn-ghost btn-sm"
@@ -121,8 +149,8 @@
 						<h3 class="text-xs font-bold tracking-wider uppercase opacity-70">Built-in</h3>
 					{/if}
 					{#each themes as theme (theme)}
-						<button on:click={() => handleSetTheme(theme)}>
-							<ThemeExample {theme} />
+						<button aria-pressed={currentTheme === theme} on:click={() => handleSetTheme(theme)}>
+							<ThemeExample {theme} active={currentTheme === theme} />
 						</button>
 					{/each}
 				</div>
@@ -150,6 +178,15 @@
 								rel="noreferrer">or use the theme generator</a
 							>
 						</div>
+						{#if copyFailed}
+							<p class="mt-3">Couldn't copy automatically. Select the text below and copy it.</p>
+							<textarea
+								bind:this={promptEl}
+								readonly
+								class="textarea mt-1 h-40 w-full font-mono text-xs"
+								aria-label="AI prompt">{aiPrompt}</textarea
+							>
+						{/if}
 					</details>
 
 					<label class="flex flex-col gap-1">
@@ -172,7 +209,11 @@
 						>
 							{#if result.theme}
 								<span class="font-semibold">Applied “{result.theme.name}”</span>
-								<span>Saved to your themes.</span>
+								{#if replaced === result.theme.name}
+									<span>Replaced your earlier “{result.theme.name}” theme.</span>
+								{:else}
+									<span>Saved to your themes.</span>
+								{/if}
 							{:else}
 								<span class="font-semibold">
 									Not applied: {result.errors.length}

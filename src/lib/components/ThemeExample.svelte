@@ -4,12 +4,13 @@
 
 	export let theme: Theme | CustomThemeId;
 	export let label: string = theme;
+	export let active = false;
 </script>
 
 <div
 	class="overflow-hidden rounded-lg outline-offset-2 outline-base-content"
-	data-set-theme={theme}
-	data-act-class="outline-solid"
+	class:outline-2={active}
+	class:outline-solid={active}
 >
 	<div data-theme={theme} class="w-full cursor-pointer bg-base-100 font-sans text-base-content">
 		<div class="grid grid-cols-5 grid-rows-3">

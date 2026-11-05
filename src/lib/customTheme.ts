@@ -14,6 +14,7 @@ export interface ParseResult {
 export type CustomThemeId = `custom-${string}`;
 
 const STORAGE_KEY = 'customThemes';
+const CSS_CACHE_KEY = 'customThemesCss';
 const STYLE_ID = 'custom-themes';
 
 export const colorVars = [
@@ -161,6 +162,9 @@ export function injectCustomThemes(themes: CustomTheme[]) {
 		document.head.appendChild(style);
 	}
 	style.textContent = themeCss(themes);
+
+	// app.html injects this cached copy before the app loads, to avoid a flash of the default theme.
+	localStorage.setItem(CSS_CACHE_KEY, style.textContent);
 }
 
 export const aiPrompt = `Create a daisyUI v5 custom theme for a stand-up meeting timer app.
@@ -168,7 +172,7 @@ The look I want: [describe it, e.g. "calm dark navy with a warm amber accent"].
 
 Reply with ONLY one CSS code block in this format:
 @plugin "daisyui/theme" {
-  name: "my-theme";
+  name: "...";
   color-scheme: light; /* or dark */
   --color-base-100: ...; --color-base-200: ...; --color-base-300: ...;
   --color-base-content: ...;
@@ -179,5 +183,6 @@ Reply with ONLY one CSS code block in this format:
   --border: ...; --depth: 0 or 1; --noise: 0 or 1;
 }
 
-Use oklch() colors, include every variable, and make each *-content color
-readable on its pair (WCAG AA).`;
+Give it a short, lowercase name that describes it (e.g. "harbor-night"),
+not "my-theme". Use oklch() colors, include every variable, and make each
+*-content color readable on its pair (WCAG AA).`;
