@@ -1,3 +1,5 @@
+import { contrastRatio } from './contrast';
+
 export interface CustomTheme {
 	name: string;
 	colorScheme: 'light' | 'dark';
@@ -66,6 +68,25 @@ const slugify = (name: string) =>
 		.replace(/[^a-z0-9]+/g, '-')
 		.replace(/^-+|-+$/g, '');
 
+const MIN_CONTRAST = 4.5;
+
+const contrastPairs: [string, string][] = [
+	['base-content', 'base-100'],
+	['base-content', 'base-200'],
+	['base-content', 'base-300'],
+	...['primary', 'secondary', 'accent', 'neutral', 'info', 'success', 'warning', 'error'].map(
+		(name): [string, string] => [`${name}-content`, name]
+	)
+];
+
+function contrastWarnings(vars: Record<string, string>): string[] {
+	return contrastPairs.flatMap(([fg, bg]) => {
+		const ratio = contrastRatio(vars[`--color-${fg}`], vars[`--color-${bg}`]);
+		if (ratio === null || ratio >= MIN_CONTRAST) return [];
+		return [`${fg} on ${bg} is hard to read: ${ratio.toFixed(1)}:1 (needs ${MIN_CONTRAST}:1).`];
+	});
+}
+
 export function parseTheme(source: string): ParseResult {
 	const errors: string[] = [];
 	const warnings: string[] = [];
@@ -121,6 +142,8 @@ export function parseTheme(source: string): ParseResult {
 	if (errors.length > 0) {
 		return { theme: null, errors, warnings };
 	}
+
+	warnings.push(...contrastWarnings(vars));
 
 	return { theme: { name, colorScheme: scheme ?? 'light', vars, source }, errors, warnings };
 }
