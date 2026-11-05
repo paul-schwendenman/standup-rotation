@@ -156,3 +156,62 @@ test('stopping the team theme removes it from the link', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: 'Team' })).toHaveCount(0);
 	expect(page.url()).not.toBe(withTeam);
 });
+
+const backgroundMask = (page: Page) =>
+	page.evaluate(() => {
+		const style = getComputedStyle(document.body, '::before');
+		return style.maskImage || style.webkitMaskImage;
+	});
+
+test('a preset background applies, survives a reload, and is shared with the team', async ({
+	page,
+	browser
+}) => {
+	await page.goto('/');
+	await openCreate(page);
+	await page.getByLabel('Theme CSS').fill(themeCss('harbor-night'));
+	await page.getByRole('radio', { name: 'Snow' }).click();
+	expect(await backgroundMask(page)).toContain('data:image/svg+xml');
+
+	await page.reload();
+	expect(await backgroundMask(page)).toContain('data:image/svg+xml');
+
+	await page.getByRole('button', { name: 'Theme' }).click();
+	await page.getByRole('button', { name: 'Use harbor-night for this team' }).click();
+
+	const teammate = await (await browser.newContext()).newPage();
+	await teammate.goto(page.url());
+	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'team');
+	expect(await backgroundMask(teammate)).toContain('data:image/svg+xml');
+});
+
+test('a custom SVG background stays personal', async ({ page, browser }) => {
+	await page.goto('/');
+	await openCreate(page);
+	await page.getByLabel('Theme CSS').fill(themeCss('harbor-night'));
+	await page.getByText('Use your own SVG').click();
+	await page
+		.getByLabel('Pattern SVG')
+		.fill('<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="2"/></svg>');
+	expect(await backgroundMask(page)).toContain('circle');
+
+	await page.getByRole('tab', { name: 'Themes' }).click();
+	await page.getByRole('button', { name: 'Use harbor-night for this team' }).click();
+	await expect(page.getByText("Custom backgrounds aren't shared.")).toBeVisible();
+
+	const teammate = await (await browser.newContext()).newPage();
+	await teammate.goto(page.url());
+	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'team');
+	expect(await backgroundMask(teammate)).toBe('none');
+});
+
+test('an unsafe SVG is rejected', async ({ page }) => {
+	await page.goto('/');
+	await openCreate(page);
+	await page.getByLabel('Theme CSS').fill(themeCss('harbor-night'));
+	await page.getByText('Use your own SVG').click();
+	await page.getByLabel('Pattern SVG').fill('<svg viewBox="0 0 1 1" onload="alert(1)"></svg>');
+
+	await expect(page.getByText("Scripts and event handlers aren't allowed.")).toBeVisible();
+	expect(await backgroundMask(page)).toBe('none');
+});

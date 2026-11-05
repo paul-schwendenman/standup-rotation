@@ -1,6 +1,8 @@
 <script lang="ts">
 	import ThemeExample from './ThemeExample.svelte';
-	import { onMount, tick } from 'svelte';
+	import BackgroundEditor from './BackgroundEditor.svelte';
+	import CopyButton from './CopyButton.svelte';
+	import { onMount } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import { applyTheme, setTheme, loadTheme } from '../utils';
 	import { themes, type Setting, type Theme } from '#lib/types.ts';
@@ -9,10 +11,11 @@
 		aiPrompt,
 		injectCustomThemes,
 		loadCustomThemes,
+		parseTeamSetting,
 		parseTheme,
 		saveCustomThemes,
 		themeId,
-		toSource,
+		toTeamSetting,
 		type CustomTheme,
 		type CustomThemeId
 	} from '#lib/customTheme.ts';
@@ -25,15 +28,16 @@
 	let customThemes: CustomTheme[] = [];
 	let tab: 'themes' | 'create' = 'themes';
 	let source = '';
-	let copied = false;
-	let copyFailed = false;
-	let promptEl: HTMLTextAreaElement;
 	// The theme this Create session is saving to, so edits to it aren't reported as replacing it.
 	let sessionName: string | null = null;
 	let replaced: string | null = null;
 
 	$: result = parseTheme(source);
-	$: teamTheme = $settings.theme ? parseTheme($settings.theme).theme : null;
+	$: editingTheme = result.theme && customThemes.find((t) => t.name === result.theme?.name);
+	$: teamTheme = parseTeamSetting($settings.theme);
+	$: teamDroppedBackground =
+		!!teamTheme &&
+		customThemes.find((t) => t.name === teamTheme.name)?.background?.pattern === 'custom';
 	$: if (mounted) {
 		injectCustomThemes(customThemes, teamTheme);
 		applyTheme(currentTheme || (teamTheme ? TEAM_THEME_ID : ''));
@@ -65,7 +69,12 @@
 			sessionName = theme.name;
 		}
 
-		storeCustomThemes([...customThemes.filter((t) => t.name !== theme.name), theme]);
+		// Re-pasting the colors keeps the background chosen for this theme.
+		const background = customThemes.find((t) => t.name === theme.name)?.background;
+		storeCustomThemes([
+			...customThemes.filter((t) => t.name !== theme.name),
+			background ? { ...theme, background } : theme
+		]);
 		setTheme(themeId(theme.name));
 		currentTheme = themeId(theme.name);
 	};
@@ -88,8 +97,16 @@
 		}
 	};
 
+	const handleBackgroundChange = (event: CustomEvent<CustomTheme['background']>) => {
+		if (!editingTheme) return;
+		const name = editingTheme.name;
+		storeCustomThemes(
+			customThemes.map((t) => (t.name === name ? { ...t, background: event.detail } : t))
+		);
+	};
+
 	const handleUseForTeam = (theme: CustomTheme) => {
-		settings.update((s) => ({ ...s, theme: toSource(theme) }));
+		settings.update((s) => ({ ...s, theme: toTeamSetting(theme) }));
 	};
 
 	const handleUseTeamTheme = () => {
@@ -99,18 +116,6 @@
 
 	const handleClearTeamTheme = () => {
 		settings.update((s) => ({ ...s, theme: undefined }));
-	};
-
-	const copyPrompt = async () => {
-		try {
-			await navigator.clipboard.writeText(aiPrompt);
-			copied = true;
-			setTimeout(() => (copied = false), 1500);
-		} catch {
-			copyFailed = true;
-			await tick();
-			promptEl.select();
-		}
 	};
 
 	onMount(() => {
@@ -158,6 +163,11 @@
 						<p class="text-xs opacity-70">
 							Saved in this page's link. It applies for anyone who hasn't picked their own theme.
 						</p>
+						{#if teamDroppedBackground}
+							<p class="text-xs opacity-70">
+								Custom backgrounds aren't shared. The team gets {teamTheme.name}'s colors only.
+							</p>
+						{/if}
 					{/if}
 					{#if customThemes.length > 0}
 						<h3 class="text-xs font-bold tracking-wider uppercase opacity-70">Custom</h3>
@@ -232,9 +242,7 @@
 							<li>Paste its reply below. Extra text is ignored.</li>
 						</ol>
 						<div class="mt-3 flex flex-wrap items-center gap-2">
-							<button class="btn btn-neutral btn-sm" on:click={copyPrompt}>
-								{copied ? 'Copied' : 'Copy AI prompt'}
-							</button>
+							<CopyButton text={aiPrompt} label="Copy AI prompt" />
 							<a
 								class="link text-xs"
 								href="https://daisyui.com/theme-generator/"
@@ -242,15 +250,6 @@
 								rel="noreferrer">or use the theme generator</a
 							>
 						</div>
-						{#if copyFailed}
-							<p class="mt-3">Couldn't copy automatically. Select the text below and copy it.</p>
-							<textarea
-								bind:this={promptEl}
-								readonly
-								class="textarea mt-1 h-40 w-full font-mono text-xs"
-								aria-label="AI prompt">{aiPrompt}</textarea
-							>
-						{/if}
 					</details>
 
 					<label class="flex flex-col gap-1">
@@ -298,6 +297,15 @@
 								<li>{warning}</li>
 							{/each}
 						</ul>
+					{/if}
+
+					{#if editingTheme}
+						{#key editingTheme.name}
+							<BackgroundEditor
+								background={editingTheme.background}
+								on:change={handleBackgroundChange}
+							/>
+						{/key}
 					{/if}
 				</div>
 			{/if}

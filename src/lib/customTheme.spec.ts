@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { colorVars, parseTheme, themeCss, toSource } from './customTheme';
+import { defaultBackground } from './background';
+import {
+	colorVars,
+	parseTeamSetting,
+	parseTheme,
+	themeCss,
+	toSource,
+	toTeamSetting
+} from './customTheme';
 
 const validTheme = `Sure! Here is your theme:
 
@@ -112,5 +120,47 @@ describe('toSource', () => {
 
 		expect(source).not.toContain('Sure!');
 		expect(parseTheme(source).theme).toEqual({ ...theme, source });
+	});
+});
+
+describe('team settings', () => {
+	it('shares preset backgrounds but drops custom SVGs', () => {
+		const { theme } = parseTheme(validTheme);
+		const preset = { ...theme!, background: defaultBackground('snow') };
+		const custom = {
+			...theme!,
+			background: {
+				...defaultBackground('dots'),
+				pattern: 'custom' as const,
+				svg: '<svg viewBox="0 0 1 1"/>'
+			}
+		};
+
+		expect(toTeamSetting(preset).background?.pattern).toBe('snow');
+		expect(toTeamSetting(custom).background).toBeUndefined();
+	});
+
+	it('ignores a custom SVG smuggled into a link', () => {
+		const { theme } = parseTheme(validTheme);
+		const parsed = parseTeamSetting({
+			source: toSource(theme!),
+			background: {
+				...defaultBackground('dots'),
+				pattern: 'custom',
+				svg: '<svg viewBox="0 0 1 1"/>'
+			}
+		});
+
+		expect(parsed?.name).toBe('standup-night');
+		expect(parsed?.background).toBeUndefined();
+	});
+
+	it('adds a background layer for themes that have one', () => {
+		const { theme } = parseTheme(validTheme);
+
+		expect(themeCss([theme!])).not.toContain('body::before');
+		expect(themeCss([{ ...theme!, background: defaultBackground('snow') }])).toContain(
+			':root[data-theme="custom-standup-night"] body::before'
+		);
 	});
 });

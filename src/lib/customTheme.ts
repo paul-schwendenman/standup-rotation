@@ -1,3 +1,4 @@
+import { backgroundDecls, parseBackground, type ThemeBackground } from './background';
 import { contrastRatio } from './contrast';
 
 export interface CustomTheme {
@@ -5,6 +6,13 @@ export interface CustomTheme {
 	colorScheme: 'light' | 'dark';
 	vars: Record<string, string>;
 	source: string;
+	background?: ThemeBackground;
+}
+
+// What a team link carries: the theme CSS plus, at most, a preset background.
+export interface TeamThemeSetting {
+	source: string;
+	background?: ThemeBackground;
 }
 
 export interface ParseResult {
@@ -156,7 +164,9 @@ function themeRule(id: string, theme: CustomTheme): string {
 	const decls = Object.entries(theme.vars)
 		.map(([key, value]) => `${key}: ${value};`)
 		.join(' ');
-	return `:root[data-theme="${id}"], [data-theme="${id}"] { color-scheme: ${theme.colorScheme}; ${decls} }`;
+	const rule = `:root[data-theme="${id}"], [data-theme="${id}"] { color-scheme: ${theme.colorScheme}; ${decls} }`;
+	if (!theme.background) return rule;
+	return `${rule}\n:root[data-theme="${id}"] body::before { ${backgroundDecls(theme.background)} }`;
 }
 
 export function themeCss(themes: CustomTheme[], teamTheme: CustomTheme | null = null): string {
@@ -179,11 +189,29 @@ export function loadCustomThemes(): CustomTheme[] {
 		const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
 		if (!Array.isArray(stored)) return [];
 		return stored
-			.map((item) => (typeof item?.source === 'string' ? parseTheme(item.source).theme : null))
+			.map((item) => {
+				const theme = typeof item?.source === 'string' ? parseTheme(item.source).theme : null;
+				const background = parseBackground(item?.background, { allowCustom: true });
+				return theme && background ? { ...theme, background } : theme;
+			})
 			.filter((theme): theme is CustomTheme => theme !== null);
 	} catch {
 		return [];
 	}
+}
+
+export function toTeamSetting(theme: CustomTheme): TeamThemeSetting {
+	const background = theme.background?.pattern === 'custom' ? undefined : theme.background;
+	return { source: toSource(theme), background };
+}
+
+// Team links only ever get preset backgrounds; a custom SVG in a link is dropped.
+export function parseTeamSetting(setting: TeamThemeSetting | undefined): CustomTheme | null {
+	const theme =
+		setting && typeof setting.source === 'string' ? parseTheme(setting.source).theme : null;
+	if (!theme) return null;
+	const background = parseBackground(setting?.background, { allowCustom: false });
+	return background ? { ...theme, background } : theme;
 }
 
 export function saveCustomThemes(themes: CustomTheme[]) {
