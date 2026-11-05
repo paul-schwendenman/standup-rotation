@@ -4,34 +4,50 @@
 		<meta charset="utf-8" />
 		<link rel="icon" href="./favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<link href="./_app/immutable/entry/start.DJmXzrnM.js" rel="modulepreload">
+		<script>
+			// Apply the saved theme before first paint; ThemeSelector re-validates custom themes on mount.
+			try {
+				const theme = localStorage.getItem('theme');
+				if (theme) document.documentElement.setAttribute('data-theme', theme);
+				const css = localStorage.getItem('customThemesCss');
+				if (css) {
+					const style = document.createElement('style');
+					style.id = 'custom-themes';
+					style.textContent = css;
+					document.head.appendChild(style);
+				}
+			} catch {
+				// localStorage unavailable; fall back to the default theme
+			}
+		</script>
+		<link href="./_app/immutable/entry/start.Cn1P10qe.js" rel="modulepreload">
 		<link href="./_app/immutable/entry/payload.DSmR2FwN.js" rel="modulepreload">
 		<link href="./_app/immutable/chunks/CRzLMJPS.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/C7ji-C_t.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/BSI2zNkU.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/CEWUAP9C.js" rel="modulepreload">
-		<link href="./_app/immutable/entry/app.B4GWr4kg.js" rel="modulepreload">
-		<link href="./_app/immutable/nodes/0.CSkcgNUp.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/USNYXNM2.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/9-ot5EQf.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/DTskpH9U.js" rel="modulepreload">
+		<link href="./_app/immutable/entry/app.cx_cOSg7.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/0.CXKIYymA.js" rel="modulepreload">
 		<link href="./_app/immutable/chunks/XKyaHtl9.js" rel="modulepreload">
-		<link href="./_app/immutable/nodes/2.CnwlnAYx.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/2.T0gy88qd.js" rel="modulepreload">
 		
-		<link href="./_app/immutable/assets/0.CEQuZ8Zi.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/0.6FgIeM3Z.css" rel="stylesheet">
 		<link href="./_app/immutable/assets/2.iYgFurBI.css" rel="stylesheet">
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">
 			<script>
 				{
-					__sveltekit_531t19 = {
+					__sveltekit_1a9vjx = {
 						base: new URL(".", location).pathname.slice(0, -1),
-						version: "1793903720469"
+						version: "1793906545852"
 					};
 
 					const element = document.currentScript.parentElement;
 
-					import("./_app/immutable/entry/start.DJmXzrnM.js").then(async (kit) => {
-						kit.init(__sveltekit_531t19);
-						const app = await import("./_app/immutable/entry/app.B4GWr4kg.js");
+					import("./_app/immutable/entry/start.Cn1P10qe.js").then(async (kit) => {
+						kit.init(__sveltekit_1a9vjx);
+						const app = await import("./_app/immutable/entry/app.cx_cOSg7.js");
 						kit.start(app, element);
 					});
 
