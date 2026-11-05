@@ -5,6 +5,8 @@
 	import { derived } from 'svelte/store';
 	import ThemeSelector from './ThemeSelector.svelte';
 	import GithubCorner from './GithubCorner.svelte';
+	import Sheet from './Sheet.svelte';
+	import CopyButton from './CopyButton.svelte';
 	import type { Setting } from '#lib/types.ts';
 
 	// const settings1 = persistable("settings", {
@@ -32,9 +34,27 @@
 	);
 
 	let showSettings = true;
+	let settingsOpen = false;
+	let themeOpen = false;
+	let settingsTrigger: HTMLButtonElement;
+
+	// Every settings change rewrites the link, so this is always the link to put in the invite.
+	$: link = $settings && location.href;
 
 	function handleRunning() {
 		showSettings = !showSettings;
+		if (!showSettings) settingsOpen = false;
+	}
+
+	function toggleSettings() {
+		themeOpen = false;
+		settingsOpen = !settingsOpen;
+		if (!settingsOpen) settingsTrigger.focus();
+	}
+
+	function closeSettings(returnFocus = true) {
+		settingsOpen = false;
+		if (returnFocus) settingsTrigger.focus();
 	}
 </script>
 
@@ -49,26 +69,34 @@
 		welcome={$settings.welcome}
 		on:running={handleRunning}
 	/>
-
-	<input type="checkbox" id="settings-modal" class="modal-toggle" />
-	<div class="modal">
-		<div class="modal-box">
-			<Settings {settings} />
-			<div class="modal-action">
-				<label for="settings-modal" class="btn uppercase btn-secondary">Save</label>
-			</div>
-		</div>
-	</div>
 </main>
 <footer class="fixed inset-x-0 bottom-0">
 	<div class="mx-auto max-w-2xl p-2">
-		<label
-			for="settings-modal"
-			class="modal-button btn uppercase btn-secondary"
-			class:btn-disabled={!showSettings}
+		<button
+			bind:this={settingsTrigger}
+			data-sheet-trigger
+			class="btn uppercase btn-secondary"
+			disabled={!showSettings}
+			aria-expanded={settingsOpen}
+			aria-controls="settings-sheet"
+			on:click={toggleSettings}
 		>
 			Settings
-		</label>
-		<ThemeSelector {settings}>Theme</ThemeSelector>
+		</button>
+		<ThemeSelector {settings} bind:open={themeOpen} on:open={() => (settingsOpen = false)}
+			>Theme</ThemeSelector
+		>
 	</div>
 </footer>
+
+{#if settingsOpen}
+	<Sheet id="settings-sheet" title="Settings" on:close={(e) => closeSettings(e.detail.returnFocus)}>
+		<Settings {settings} />
+		<svelte:fragment slot="footer">
+			<p class="text-sm">
+				Changes are saved in this page's link. Update the meeting invite so the team gets them.
+			</p>
+			<div><CopyButton text={link} label="Copy link" /></div>
+		</svelte:fragment>
+	</Sheet>
+{/if}
