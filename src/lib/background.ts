@@ -37,7 +37,7 @@ export const presets: Record<PresetId, { label: string; layout: Layout; svg: str
 	snow: {
 		label: 'Snow',
 		layout: 'tile',
-		svg: `<svg ${XMLNS} viewBox="0 0 48 48"><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14M7 7l10 10M17 7 7 17"/><path d="M36 29v10M31 34h10M32.5 30.5l7 7M39.5 30.5l-7 7"/></g></svg>`
+		svg: `<svg ${XMLNS} viewBox="0 0 48 48"><g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M18.1 8.5 5.9 15.5M5.9 8.5l12.2 7"/><path d="M36 29v10M40.3 31.5 31.7 36.5M31.7 31.5l8.6 5"/></g></svg>`
 	},
 	hills: {
 		label: 'Hills',
