@@ -357,6 +357,53 @@ test('Done clears the paste so the next Create starts fresh', async ({ page }) =
 	await expect(pasteBox(page)).toHaveValue('');
 });
 
+test('your created background survives picking a preset and reloading', async ({ page }) => {
+	await createBackground(page, smallSvg, 'Pattern');
+	await page.getByRole('button', { name: 'Done' }).click();
+	await page.getByRole('radio', { name: 'Snow' }).click();
+
+	await page.reload();
+	await themeButton(page).click();
+	await page.getByRole('radio', { name: 'Yours' }).click();
+	expect(await backgroundMask(page)).toContain('rect');
+});
+
+// Only the inline script in app.html runs, which is what paints before the app loads.
+const withoutAppScripts = async (page: Page) =>
+	page.route('**/*', (route) =>
+		route.request().resourceType() === 'script' ? route.abort() : route.continue()
+	);
+
+test('a team look from a link opened before shows before the app loads', async ({
+	page,
+	browser
+}) => {
+	await page.goto('/');
+	await themeButton(page).click();
+	await themeCard(page, 'dracula').click();
+	await page.getByRole('radio', { name: 'Snow' }).click();
+	await shareWithTeam(page);
+	const teamLink = page.url();
+
+	const context = await browser.newContext();
+	const teammate = await context.newPage();
+	await teammate.goto(teamLink);
+	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'dracula');
+
+	const firstPaint = await context.newPage();
+	await withoutAppScripts(firstPaint);
+	await firstPaint.goto(teamLink);
+	await expect(htmlTheme(firstPaint)).toHaveAttribute('data-theme', 'dracula');
+	expect(await backgroundMask(firstPaint)).toContain('data:image/svg+xml');
+
+	// Another link doesn't borrow this team's look.
+	const otherLink = await context.newPage();
+	await withoutAppScripts(otherLink);
+	await otherLink.goto('/');
+	await expect(htmlTheme(otherLink)).not.toHaveAttribute('data-theme', 'dracula');
+	expect(await backgroundMask(otherLink)).toBe('none');
+});
+
 test('the theme sheet works from the keyboard', async ({ page }) => {
 	await page.goto('/');
 

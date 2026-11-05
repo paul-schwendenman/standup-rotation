@@ -46,7 +46,10 @@ export type TeamThemeId = typeof TEAM_THEME_ID;
 
 const STORAGE_KEY = 'customThemes';
 const BACKGROUND_KEY = 'background';
+const YOURS_KEY = 'customBackground';
+// app.html reads these two before the app loads, to avoid a flash of the default theme.
 const CSS_CACHE_KEY = 'customThemesCss';
+const LOOK_CACHE_KEY = 'lookCache';
 const STYLE_ID = 'custom-themes';
 
 export const colorVars = [
@@ -258,6 +261,22 @@ export function saveBackground(background: ThemeBackground | null | undefined) {
 	else localStorage.setItem(BACKGROUND_KEY, JSON.stringify(background));
 }
 
+// The last background made with Create, offered as the "Yours" tile even after picking a preset.
+export function loadYours(): ThemeBackground | null {
+	try {
+		const background = parseBackground(JSON.parse(localStorage.getItem(YOURS_KEY) ?? 'null'), {
+			shareableOnly: false
+		});
+		return background?.pattern === 'custom' ? background : null;
+	} catch {
+		return null;
+	}
+}
+
+export function saveYours(background: ThemeBackground | null) {
+	if (background) localStorage.setItem(YOURS_KEY, JSON.stringify(background));
+}
+
 // Custom SVGs too big for a link stay personal; the team gets the theme without them.
 export function toTeamSetting(
 	theme: Theme | CustomTheme | null,
@@ -297,9 +316,17 @@ export function injectCustomThemes(
 		document.head.appendChild(style);
 	}
 	style.textContent = themeCss(themes, teamTheme, background);
+}
 
-	// app.html injects this cached copy before the app loads, to avoid a flash of the default theme.
-	localStorage.setItem(CSS_CACHE_KEY, style.textContent);
+// The link is compressed, so app.html can't read a team look from it before the app loads.
+// Instead it reuses what was last shown for this exact link, and otherwise only personal choices.
+export function cacheLook(personalCss: string, theme: string, css: string) {
+	try {
+		localStorage.setItem(CSS_CACHE_KEY, personalCss);
+		localStorage.setItem(LOOK_CACHE_KEY, JSON.stringify({ hash: location.hash, theme, css }));
+	} catch {
+		// Storage full or blocked: the page still works, it just may flash on the next load.
+	}
 }
 
 export type CreateKind = 'both' | 'theme' | 'background';

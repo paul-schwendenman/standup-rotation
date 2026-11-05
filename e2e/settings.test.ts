@@ -78,3 +78,27 @@ test('the footer buttons toggle their sheet rather than close-and-reopen it', as
 	await theme.click();
 	await expect(page.getByRole('dialog', { name: 'Theme' })).toHaveCount(0);
 });
+
+test('names can be added, renamed and removed by label', async ({ page }) => {
+	await page.goto('/');
+	await page.getByRole('button', { name: 'Settings' }).click();
+
+	const add = page.getByRole('button', { name: 'Add' });
+	await expect(add).toBeDisabled();
+	await page.getByLabel('New name').fill('Ada');
+	await page.getByLabel('New name').press('Enter');
+	await page.getByLabel('New name').fill('Grace');
+	await add.click();
+	await expect(page.getByLabel('New name')).toHaveValue('');
+
+	await page.getByLabel('Name', { exact: true }).first().fill('Ada L.');
+	await expect(
+		page.getByRole('checkbox', { name: 'Include Ada L. in the rotation' })
+	).toBeChecked();
+
+	await page.getByRole('button', { name: 'Remove Grace' }).click();
+	await expect(page.getByRole('button', { name: /^Remove / })).toHaveCount(1);
+
+	await page.getByRole('checkbox', { name: 'Include Ada L. in the rotation' }).uncheck();
+	await expect(page.getByRole('button', { name: 'start' })).toBeDisabled();
+});

@@ -5,11 +5,14 @@
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<script>
-			// Apply the saved theme before first paint; ThemeSelector re-validates custom themes on mount.
+			// Apply the saved look before first paint; ThemeSelector re-validates everything on mount.
+			// A team look in the link is only known here if this exact link was opened before.
 			try {
-				const theme = localStorage.getItem('theme');
+				const look = JSON.parse(localStorage.getItem('lookCache') || 'null');
+				const sameLink = !!look && look.hash === location.hash;
+				const theme = localStorage.getItem('theme') || (sameLink ? look.theme : '');
 				if (theme) document.documentElement.setAttribute('data-theme', theme);
-				const css = localStorage.getItem('customThemesCss');
+				const css = sameLink ? look.css : localStorage.getItem('customThemesCss');
 				if (css) {
 					const style = document.createElement('style');
 					style.id = 'custom-themes';

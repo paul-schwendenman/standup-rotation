@@ -19,15 +19,19 @@
 		TEAM_THEME_ID,
 		createPrompt,
 		describePlaceholder,
+		cacheLook,
 		injectCustomThemes,
 		isCustomThemeId,
 		loadBackground,
 		loadCustomThemes,
+		loadYours,
 		parseLook,
 		parseTeamSetting,
 		pastedBackground,
 		saveBackground,
 		saveCustomThemes,
+		saveYours,
+		themeCss,
 		themeId,
 		toTeamSetting,
 		type CreateKind,
@@ -96,6 +100,7 @@
 	$: pasteLayout = kind === 'background' ? style : ('tile' as Layout);
 	$: ({ result, background: pasted } = parseLook(source, pasteLayout));
 	$: if (shownBackground?.pattern === 'custom') yours = shownBackground;
+	$: if (mounted) saveYours(yours);
 	$: team = parseTeamSetting($settings.theme);
 	$: teamThemeId = team?.builtIn ?? (team?.custom ? TEAM_THEME_ID : '');
 	$: shownTheme = currentTheme || teamThemeId;
@@ -103,6 +108,11 @@
 	$: if (mounted) {
 		injectCustomThemes(customThemes, team?.custom ?? null, shownBackground);
 		applyTheme(shownTheme);
+		cacheLook(
+			themeCss(customThemes, null, background ?? null),
+			shownTheme,
+			themeCss(customThemes, team?.custom ?? null, shownBackground)
+		);
 	}
 
 	// What "Use this look for the team" would put in the link, compared with what's there now.
@@ -253,6 +263,7 @@
 		customThemes = loadCustomThemes();
 		currentTheme = loadTheme();
 		background = loadBackground();
+		yours = loadYours();
 		mounted = true;
 	});
 </script>
