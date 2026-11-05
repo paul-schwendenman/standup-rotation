@@ -43,7 +43,10 @@ export const themes = [
 	'winter',
 	'dim',
 	'nord',
-	'sunset'
+	'sunset',
+	'caramellatte',
+	'abyss',
+	'silk'
 ] as const;
 
 export type Theme = (typeof themes)[number];
