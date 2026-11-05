@@ -1,18 +1,34 @@
-import { backgroundDecls, isShareable, parseBackground, type ThemeBackground } from './background';
+import {
+	backgroundDecls,
+	checkSvg,
+	defaultBackground,
+	isShareable,
+	parseBackground,
+	type ThemeBackground
+} from './background';
 import { contrastRatio } from './contrast';
+import { themes, type Theme } from './types';
 
 export interface CustomTheme {
 	name: string;
 	colorScheme: 'light' | 'dark';
 	vars: Record<string, string>;
 	source: string;
+}
+
+// What a team link carries: a built-in theme's name or a custom theme's CSS, and/or a background.
+// Links from before backgrounds and built-in names carry only `source`, and still parse.
+export interface TeamThemeSetting {
+	name?: Theme;
+	source?: string;
 	background?: ThemeBackground;
 }
 
-// What a team link carries: the theme CSS plus, at most, a preset background.
-export interface TeamThemeSetting {
-	source: string;
-	background?: ThemeBackground;
+// A team link, validated. A look can be a theme, a background, or both.
+export interface TeamLook {
+	builtIn: Theme | null;
+	custom: CustomTheme | null;
+	background: ThemeBackground | null;
 }
 
 export interface ParseResult {
@@ -28,6 +44,7 @@ export const TEAM_THEME_ID = 'team';
 export type TeamThemeId = typeof TEAM_THEME_ID;
 
 const STORAGE_KEY = 'customThemes';
+const BACKGROUND_KEY = 'background';
 const CSS_CACHE_KEY = 'customThemesCss';
 const STYLE_ID = 'custom-themes';
 
@@ -73,6 +90,8 @@ export const themeId = (name: string): CustomThemeId => `custom-${name}`;
 
 export const isCustomThemeId = (theme: string | null): theme is CustomThemeId =>
 	!!theme && theme.startsWith('custom-');
+
+export const isBuiltInTheme = (theme: unknown): theme is Theme => themes.includes(theme as Theme);
 
 const slugify = (name: string) =>
 	name
@@ -160,18 +179,38 @@ export function parseTheme(source: string): ParseResult {
 	return { theme: { name, colorScheme: scheme ?? 'light', vars, source }, errors, warnings };
 }
 
+// A paste can hold a theme block and an <svg> background together (the one-step AI prompt asks for both).
+export function parseLook(text: string): {
+	result: ParseResult;
+	background: { svg: string | null; errors: string[] } | null;
+} {
+	const svgMatch = text.match(/<svg[\s>][\s\S]*?<\/svg>/i);
+	const result = parseTheme(svgMatch ? text.replace(svgMatch[0], '') : text);
+	return { result, background: svgMatch ? checkSvg(svgMatch[0], 'tile') : null };
+}
+
+export const pastedBackground = (svg: string): ThemeBackground => ({
+	...defaultBackground('dots'),
+	pattern: 'custom',
+	svg
+});
+
 function themeRule(id: string, theme: CustomTheme): string {
 	const decls = Object.entries(theme.vars)
 		.map(([key, value]) => `${key}: ${value};`)
 		.join(' ');
-	const rule = `:root[data-theme="${id}"], [data-theme="${id}"] { color-scheme: ${theme.colorScheme}; ${decls} }`;
-	if (!theme.background) return rule;
-	return `${rule}\n:root[data-theme="${id}"] body::before { ${backgroundDecls(theme.background)} }`;
+	return `:root[data-theme="${id}"], [data-theme="${id}"] { color-scheme: ${theme.colorScheme}; ${decls} }`;
 }
 
-export function themeCss(themes: CustomTheme[], teamTheme: CustomTheme | null = null): string {
+// The background is its own layer: it applies whatever theme is showing.
+export function themeCss(
+	themes: CustomTheme[],
+	teamTheme: CustomTheme | null = null,
+	background: ThemeBackground | null = null
+): string {
 	const rules = themes.map((theme) => themeRule(themeId(theme.name), theme));
 	if (teamTheme) rules.push(themeRule(TEAM_THEME_ID, teamTheme));
+	if (background) rules.push(`body::before { ${backgroundDecls(background)} }`);
 	return rules.join('\n');
 }
 
@@ -189,53 +228,85 @@ export function loadCustomThemes(): CustomTheme[] {
 		const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
 		if (!Array.isArray(stored)) return [];
 		return stored
-			.map((item) => {
-				const theme = typeof item?.source === 'string' ? parseTheme(item.source).theme : null;
-				const background = parseBackground(item?.background, { shareableOnly: false });
-				return theme && background ? { ...theme, background } : theme;
-			})
+			.map((item) => (typeof item?.source === 'string' ? parseTheme(item.source).theme : null))
 			.filter((theme): theme is CustomTheme => theme !== null);
 	} catch {
 		return [];
 	}
 }
 
-export function toTeamSetting(theme: CustomTheme): TeamThemeSetting {
-	const background =
-		theme.background && isShareable(theme.background) ? theme.background : undefined;
-	return { source: toSource(theme), background };
+// undefined: no personal pick, so the team's background applies. null: picked "None".
+export function loadBackground(): ThemeBackground | null | undefined {
+	try {
+		const stored = localStorage.getItem(BACKGROUND_KEY);
+		if (stored === null) return undefined;
+		return parseBackground(JSON.parse(stored), { shareableOnly: false });
+	} catch {
+		return undefined;
+	}
+}
+
+export function saveBackground(background: ThemeBackground | null | undefined) {
+	if (background === undefined) localStorage.removeItem(BACKGROUND_KEY);
+	else localStorage.setItem(BACKGROUND_KEY, JSON.stringify(background));
+}
+
+// Custom SVGs too big for a link stay personal; the team gets the theme without them.
+export function toTeamSetting(
+	theme: Theme | CustomTheme | null,
+	background: ThemeBackground | null
+): TeamThemeSetting | undefined {
+	const setting: TeamThemeSetting = {};
+	if (typeof theme === 'string') setting.name = theme;
+	else if (theme) setting.source = toSource(theme);
+	if (background && isShareable(background)) setting.background = background;
+	return Object.keys(setting).length > 0 ? setting : undefined;
 }
 
 // Team links carry presets and small custom SVGs; anything bigger in a link is dropped.
-export function parseTeamSetting(setting: TeamThemeSetting | undefined): CustomTheme | null {
-	const theme =
-		setting && typeof setting.source === 'string' ? parseTheme(setting.source).theme : null;
-	if (!theme) return null;
-	const background = parseBackground(setting?.background, { shareableOnly: true });
-	return background ? { ...theme, background } : theme;
+export function parseTeamSetting(setting: TeamThemeSetting | undefined): TeamLook | null {
+	if (!setting || typeof setting !== 'object') return null;
+	const builtIn = isBuiltInTheme(setting.name) ? setting.name : null;
+	const custom =
+		!builtIn && typeof setting.source === 'string' ? parseTheme(setting.source).theme : null;
+	const background = parseBackground(setting.background, { shareableOnly: true });
+	if (!builtIn && !custom && !background) return null;
+	return { builtIn, custom, background };
 }
 
 export function saveCustomThemes(themes: CustomTheme[]) {
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(themes));
 }
 
-export function injectCustomThemes(themes: CustomTheme[], teamTheme: CustomTheme | null = null) {
+export function injectCustomThemes(
+	themes: CustomTheme[],
+	teamTheme: CustomTheme | null = null,
+	background: ThemeBackground | null = null
+) {
 	let style = document.getElementById(STYLE_ID);
 	if (!style) {
 		style = document.createElement('style');
 		style.id = STYLE_ID;
 		document.head.appendChild(style);
 	}
-	style.textContent = themeCss(themes, teamTheme);
+	style.textContent = themeCss(themes, teamTheme, background);
 
 	// app.html injects this cached copy before the app loads, to avoid a flash of the default theme.
 	localStorage.setItem(CSS_CACHE_KEY, style.textContent);
 }
 
-export const aiPrompt = `Create a daisyUI v5 custom theme for a stand-up meeting timer app.
-The look I want: [describe it, e.g. "calm dark navy with a warm amber accent"].
+export const DESCRIBE_PLACEHOLDER = 'calm dark navy with a warm amber accent and soft snowflakes';
 
-Reply with ONLY one CSS code block in this format:
+// One prompt, one reply: the theme block plus a matching tiled background.
+export const lookPrompt = (
+	description: string
+) => `Create a daisyUI v5 custom theme and a matching background pattern
+for a stand-up meeting timer app.
+The look I want: ${description.trim() || `[describe it, e.g. "${DESCRIBE_PLACEHOLDER}"]`}.
+
+Reply with exactly two code blocks and nothing else.
+
+1. The theme, in this format:
 @plugin "daisyui/theme" {
   name: "...";
   color-scheme: light; /* or dark */
@@ -247,7 +318,11 @@ Reply with ONLY one CSS code block in this format:
   --size-selector: ...; --size-field: ...;
   --border: ...; --depth: 0 or 1; --noise: 0 or 1;
 }
-
 Give it a short, lowercase name that describes it (e.g. "harbor-night"),
 not "my-theme". Use oklch() colors, include every variable, and make each
-*-content color readable on its pair (WCAG AA).`;
+*-content color readable on its pair (WCAG AA).
+
+2. A seamless tiling SVG pattern that fits the look.
+Rules: one <svg> element with a viewBox (e.g. 0 0 48 48); one color (#000);
+sparse, small shapes that wrap cleanly at the edges; no text, scripts, images
+or links; under 2 KB.`;

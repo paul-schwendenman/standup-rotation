@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { defaultBackground } from './background';
 import {
 	colorVars,
+	parseLook,
 	parseTeamSetting,
 	parseTheme,
 	themeCss,
@@ -123,53 +124,92 @@ describe('toSource', () => {
 	});
 });
 
+const bigSvg = `<svg viewBox="0 0 1 1">${'<rect/>'.repeat(400)}</svg>`;
+const custom = (svg: string) => ({ ...defaultBackground('dots'), pattern: 'custom' as const, svg });
+
 describe('team settings', () => {
-	it('shares presets and small custom SVGs but drops big ones', () => {
+	it('shares a built-in theme by name and a custom theme by its CSS', () => {
 		const { theme } = parseTheme(validTheme);
-		const preset = { ...theme!, background: defaultBackground('snow') };
-		const custom = {
-			...theme!,
-			background: {
-				...defaultBackground('dots'),
-				pattern: 'custom' as const,
-				svg: '<svg viewBox="0 0 1 1"/>'
-			}
-		};
 
-		const big = {
-			...custom,
-			background: {
-				...custom.background,
-				svg: `<svg viewBox="0 0 1 1">${'<rect/>'.repeat(400)}</svg>`
-			}
-		};
-
-		expect(toTeamSetting(preset).background?.pattern).toBe('snow');
-		expect(toTeamSetting(custom).background?.pattern).toBe('custom');
-		expect(toTeamSetting(big).background).toBeUndefined();
+		expect(toTeamSetting('dracula', null)).toEqual({ name: 'dracula' });
+		expect(toTeamSetting(theme!, null)).toEqual({ source: toSource(theme!) });
+		expect(toTeamSetting(null, null)).toBeUndefined();
 	});
 
-	it('drops an oversized custom SVG from a link but keeps the colors', () => {
+	it('shares a background with or without a theme, but drops big custom SVGs', () => {
+		expect(toTeamSetting(null, defaultBackground('snow'))?.background?.pattern).toBe('snow');
+		expect(toTeamSetting('dark', custom('<svg viewBox="0 0 1 1"/>'))?.background?.pattern).toBe(
+			'custom'
+		);
+		expect(toTeamSetting('dark', custom(bigSvg))).toEqual({ name: 'dark' });
+	});
+
+	it('reads built-in, custom and background-only looks from a link', () => {
 		const { theme } = parseTheme(validTheme);
-		const parsed = parseTeamSetting({
-			source: toSource(theme!),
-			background: {
-				...defaultBackground('hills'),
-				pattern: 'custom',
-				svg: `<svg viewBox="0 0 1 1">${'<rect/>'.repeat(400)}</svg>`
-			}
+
+		expect(parseTeamSetting({ name: 'dracula' })).toEqual({
+			builtIn: 'dracula',
+			custom: null,
+			background: null
 		});
-
-		expect(parsed?.name).toBe('standup-night');
-		expect(parsed?.background).toBeUndefined();
+		expect(parseTeamSetting({ source: toSource(theme!) })?.custom?.name).toBe('standup-night');
+		expect(parseTeamSetting({ background: defaultBackground('snow') })?.background?.pattern).toBe(
+			'snow'
+		);
 	});
 
-	it('adds a background layer for themes that have one', () => {
+	it('still reads links made before built-in names and backgrounds', () => {
+		const { theme } = parseTheme(validTheme);
+		const look = parseTeamSetting({ source: toSource(theme!) });
+
+		expect(look?.custom?.name).toBe('standup-night');
+		expect(look?.builtIn).toBeNull();
+	});
+
+	it('drops an oversized custom SVG or an unknown theme name from a link', () => {
+		const { theme } = parseTheme(validTheme);
+
+		const parsed = parseTeamSetting({ source: toSource(theme!), background: custom(bigSvg) });
+		expect(parsed?.custom?.name).toBe('standup-night');
+		expect(parsed?.background).toBeNull();
+
+		// @ts-expect-error: links can hold anything
+		expect(parseTeamSetting({ name: 'not-a-theme' })).toBeNull();
+	});
+});
+
+describe('background layer', () => {
+	it('applies to every theme rather than one theme id', () => {
 		const { theme } = parseTheme(validTheme);
 
 		expect(themeCss([theme!])).not.toContain('body::before');
-		expect(themeCss([{ ...theme!, background: defaultBackground('snow') }])).toContain(
-			':root[data-theme="custom-standup-night"] body::before'
+		const css = themeCss([theme!], null, defaultBackground('snow'));
+		expect(css).toContain('\nbody::before {');
+		expect(css).not.toContain('custom-standup-night"] body::before');
+	});
+});
+
+describe('parseLook', () => {
+	it('splits one reply into a theme and a background', () => {
+		const reply = `${validTheme}\n\nAnd the pattern:\n<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="3"/></svg>`;
+		const { result, background } = parseLook(reply);
+
+		expect(result.theme?.name).toBe('standup-night');
+		expect(result.warnings.filter((w) => w.includes('ignored'))).toEqual([]);
+		expect(background?.svg).toContain('<circle');
+	});
+
+	it('has no background when the reply is only a theme', () => {
+		expect(parseLook(validTheme).background).toBeNull();
+	});
+
+	it('keeps the theme when the SVG is rejected', () => {
+		const { result, background } = parseLook(
+			`${validTheme}\n<svg viewBox="0 0 1 1" onload="alert(1)"></svg>`
 		);
+
+		expect(result.theme).not.toBeNull();
+		expect(background?.svg).toBeNull();
+		expect(background?.errors).toContain("Scripts and event handlers aren't allowed.");
 	});
 });

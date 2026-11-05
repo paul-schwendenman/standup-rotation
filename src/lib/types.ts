@@ -11,7 +11,7 @@ export interface Setting {
 	duration: string;
 	showTimer: boolean;
 	names: Person[];
-	// The team's custom theme; applies for anyone who hasn't picked their own.
+	// The team's look (theme and/or background); applies for anyone who hasn't picked their own.
 	theme?: TeamThemeSetting;
 }
 
