@@ -25,6 +25,8 @@ export function urlHash<T>(defaultValue: T): Writable<T> {
 			const newValue = fn(oldValue);
 
 			location.hash = encode(newValue);
+
+			return newValue;
 		});
 	}
 

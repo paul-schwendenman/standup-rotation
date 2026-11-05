@@ -26,7 +26,7 @@
 </script>
 
 <p>Names:</p>
-{#each names as name, index}
+{#each names as name, index (index)}
 	<div class="mb-1 flex items-center justify-between">
 		<span class="inline-flex items-center">
 			<input

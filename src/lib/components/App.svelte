@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Standup from './Standup.svelte';
 	import Settings from './Settings.svelte';
-	import { persistable, urlHash } from '../stores';
+	import { urlHash } from '../stores';
 	import { derived } from 'svelte/store';
 	import ThemeSelector from './ThemeSelector.svelte';
 	import GithubCorner from './GithubCorner.svelte';
@@ -33,11 +33,9 @@
 
 	let showSettings = true;
 
-	function handleRunning(_event) {
+	function handleRunning() {
 		showSettings = !showSettings;
 	}
-
-	$: validNames = $namesList.length > 0;
 </script>
 
 <GithubCorner />

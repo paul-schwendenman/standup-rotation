@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { shuffle } from '../utils';
 
@@ -7,7 +7,7 @@
 	export let welcome = 'Welcome to stand-up';
 	export let doneMessage = 'Done!';
 
-	export let names = [
+	export let names: string[] = [
 		'Adam',
 		'Adrian',
 		'Carson',
@@ -25,21 +25,21 @@
 		'Tyler'
 	];
 
-	const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher<{ running: boolean }>();
 
-	var timeOutId;
+	let timeOutId: ReturnType<typeof setTimeout> | undefined;
 
 	let started = false;
 	let done = false;
-	let currentName;
-	let nextName;
-	let timer;
-	let namesList = [];
+	let currentName = '';
+	let nextName = '';
+	let timer: string | null = null;
+	let namesList: string[] = [];
 
 	let i = 0;
 
-	function shuffleNames() {
-		namesList = [...shuffle(names)];
+	function shuffleNames(list: string[] = names) {
+		namesList = [...shuffle(list)];
 		nextName = namesList[0] || '';
 	}
 
@@ -75,26 +75,27 @@
 		startTimer();
 	}
 
-	function checkSecond(sec) {
+	function checkSecond(sec: number): string {
 		if (sec < 10 && sec >= 0) {
-			sec = '0' + sec;
+			return '0' + sec;
 		}
 		if (sec < 0) {
-			sec = '59';
+			return '59';
 		}
-		return sec;
+		return String(sec);
 	}
 
 	const startTimer = function () {
-		const presentTime = timer;
+		const presentTime = timer ?? time;
 		const timeArray = presentTime.split(/[:]+/);
-		let m = timeArray[0];
-		let s = checkSecond(timeArray[1] - 1);
+		let m = Number(timeArray[0]);
+		const sec = Number(timeArray[1]) - 1;
+		const s = checkSecond(sec);
 
-		if (s == 59) {
+		if (sec < 0) {
 			m = m - 1;
 		}
-		if (s == 0 && m == 0) {
+		if (sec === 0 && m === 0) {
 			timer = 'Over time!';
 		} else {
 			timer = m + ':' + s;
@@ -113,9 +114,7 @@
 		shuffleNames();
 	}
 
-	$: (() => {
-		shuffleNames();
-	})(names);
+	$: shuffleNames(names);
 </script>
 
 <div>
@@ -146,7 +145,7 @@
 			<button on:click={start} class="btn btn-primary uppercase" disabled={names.length === 0}
 				>start</button
 			>
-			<button on:click={shuffleNames} class="btn uppercase">shuffle</button>
+			<button on:click={() => shuffleNames()} class="btn uppercase">shuffle</button>
 		{:else}
 			<button on:click={next} class="btn btn-primary uppercase">next</button>
 			<button on:click={skip} class="btn uppercase" disabled={i + 1 === namesList.length}
@@ -156,7 +155,7 @@
 	</section>
 </div>
 
-<style>
+<style lang="postcss">
 	section {
 		@apply mb-8 flex items-baseline gap-2;
 	}

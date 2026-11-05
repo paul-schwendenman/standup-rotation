@@ -1,4 +1,4 @@
-import type { Theme } from "./types";
+import type { Theme } from './types';
 
 export function shuffle<T>(array: T[]): T[] {
 	let currentIndex = array.length,
@@ -23,7 +23,7 @@ export const loadTheme = (): Theme | null => {
 	return theme;
 };
 
-export const setTheme = (theme: Theme) => {
+export const setTheme = (theme: Theme | '') => {
 	document.documentElement.setAttribute('data-theme', theme);
 	localStorage.setItem('theme', theme);
 };

@@ -8,7 +8,7 @@ export interface Setting {
 	done: string;
 	duration: string;
 	showTimer: boolean;
-	names: Person[]
+	names: Person[];
 }
 
 export const themes = [
