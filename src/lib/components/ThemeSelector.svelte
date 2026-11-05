@@ -2,7 +2,7 @@
 	import ThemeExample from './ThemeExample.svelte';
 	import { onMount } from 'svelte';
 	import { setTheme, loadTheme } from '../utils';
-	import { themes, type Theme } from '$lib/types';
+	import { themes, type Theme } from '#lib/types.ts';
 
 	let currentTheme: Theme | null = null;
 

@@ -5,7 +5,7 @@
 	import { derived } from 'svelte/store';
 	import ThemeSelector from './ThemeSelector.svelte';
 	import GithubCorner from './GithubCorner.svelte';
-	import type { Setting } from '$lib/types';
+	import type { Setting } from '#lib/types.ts';
 
 	// const settings1 = persistable("settings", {
 	//   welcome: "Welcome!",
