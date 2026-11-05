@@ -279,11 +279,6 @@
 					</section>
 				{/if}
 
-				<BackgroundEditor
-					background={shownBackground}
-					on:change={(e) => storeBackground(e.detail)}
-				/>
-
 				<section class="flex flex-col gap-3" aria-labelledby="theme-title">
 					<h3 id="theme-title" class="text-xs font-bold tracking-wider uppercase opacity-70">
 						Theme
@@ -356,6 +351,11 @@
 						{/each}
 					</div>
 				</section>
+
+				<BackgroundEditor
+					background={shownBackground}
+					on:change={(e) => storeBackground(e.detail)}
+				/>
 			</div>
 
 			<footer class="flex flex-col gap-2 border-t border-base-300 px-5 py-4">
