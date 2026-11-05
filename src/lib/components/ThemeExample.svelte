@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Theme } from '#lib/types.ts';
-	import type { CustomThemeId } from '#lib/customTheme.ts';
+	import type { CustomThemeId, TeamThemeId } from '#lib/customTheme.ts';
 
-	export let theme: Theme | CustomThemeId;
+	export let theme: Theme | CustomThemeId | TeamThemeId;
 	export let label: string = theme;
 	export let active = false;
 </script>

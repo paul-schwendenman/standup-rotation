@@ -1,20 +1,27 @@
 <script lang="ts">
 	import ThemeExample from './ThemeExample.svelte';
 	import { onMount, tick } from 'svelte';
-	import { setTheme, loadTheme } from '../utils';
-	import { themes, type Theme } from '#lib/types.ts';
+	import type { Writable } from 'svelte/store';
+	import { applyTheme, setTheme, loadTheme } from '../utils';
+	import { themes, type Setting, type Theme } from '#lib/types.ts';
 	import {
+		TEAM_THEME_ID,
 		aiPrompt,
 		injectCustomThemes,
 		loadCustomThemes,
 		parseTheme,
 		saveCustomThemes,
 		themeId,
+		toSource,
 		type CustomTheme,
 		type CustomThemeId
 	} from '#lib/customTheme.ts';
 
+	export let settings: Writable<Setting>;
+
+	// The theme this person picked; when unset, the team theme from the link applies.
 	let currentTheme: Theme | CustomThemeId | null = null;
+	let mounted = false;
 	let customThemes: CustomTheme[] = [];
 	let tab: 'themes' | 'create' = 'themes';
 	let source = '';
@@ -26,6 +33,11 @@
 	let replaced: string | null = null;
 
 	$: result = parseTheme(source);
+	$: teamTheme = $settings.theme ? parseTheme($settings.theme).theme : null;
+	$: if (mounted) {
+		injectCustomThemes(customThemes, teamTheme);
+		applyTheme(currentTheme || (teamTheme ? TEAM_THEME_ID : ''));
+	}
 
 	const handleSetTheme = (theme: Theme | CustomThemeId) => {
 		if (currentTheme !== theme) {
@@ -40,7 +52,6 @@
 	const storeCustomThemes = (updated: CustomTheme[]) => {
 		customThemes = updated;
 		saveCustomThemes(customThemes);
-		injectCustomThemes(customThemes);
 	};
 
 	const handleSourceInput = () => {
@@ -77,6 +88,19 @@
 		}
 	};
 
+	const handleUseForTeam = (theme: CustomTheme) => {
+		settings.update((s) => ({ ...s, theme: toSource(theme) }));
+	};
+
+	const handleUseTeamTheme = () => {
+		setTheme('');
+		currentTheme = null;
+	};
+
+	const handleClearTeamTheme = () => {
+		settings.update((s) => ({ ...s, theme: undefined }));
+	};
+
 	const copyPrompt = async () => {
 		try {
 			await navigator.clipboard.writeText(aiPrompt);
@@ -91,8 +115,8 @@
 
 	onMount(() => {
 		customThemes = loadCustomThemes();
-		injectCustomThemes(customThemes);
 		currentTheme = loadTheme();
+		mounted = true;
 	});
 </script>
 
@@ -119,6 +143,22 @@
 		<div class="overflow-y-auto">
 			{#if tab === 'themes'}
 				<div class="grid grid-cols-1 gap-3 p-3">
+					{#if teamTheme}
+						<h3 class="text-xs font-bold tracking-wider uppercase opacity-70">Team</h3>
+						<div class="flex items-center gap-1">
+							<button class="grow" aria-pressed={!currentTheme} on:click={handleUseTeamTheme}>
+								<ThemeExample theme={TEAM_THEME_ID} label={teamTheme.name} active={!currentTheme} />
+							</button>
+							<button
+								class="btn btn-square btn-ghost btn-sm"
+								aria-label="Stop using {teamTheme.name} for this team"
+								on:click={handleClearTeamTheme}>✕</button
+							>
+						</div>
+						<p class="text-xs opacity-70">
+							Saved in this page's link. It applies for anyone who hasn't picked their own theme.
+						</p>
+					{/if}
 					{#if customThemes.length > 0}
 						<h3 class="text-xs font-bold tracking-wider uppercase opacity-70">Custom</h3>
 						{#each customThemes as theme (theme.name)}
@@ -136,6 +176,28 @@
 								</button>
 								<button
 									class="btn btn-square btn-ghost btn-sm"
+									aria-label="Use {theme.name} for this team"
+									title="Use for this team"
+									on:click={() => handleUseForTeam(theme)}
+								>
+									<svg
+										class="size-4"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										aria-hidden="true"
+										><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0" /><circle
+											cx="17"
+											cy="9"
+											r="2.5"
+										/><path d="M15.5 14.2A5 5 0 0 1 21 19" /></svg
+									>
+								</button>
+								<button
+									class="btn btn-square btn-ghost btn-sm"
 									aria-label="Edit {theme.name}"
 									on:click={() => handleEditCustom(theme)}>✎</button
 								>
@@ -146,6 +208,8 @@
 								>
 							</div>
 						{/each}
+					{/if}
+					{#if teamTheme || customThemes.length > 0}
 						<h3 class="text-xs font-bold tracking-wider uppercase opacity-70">Built-in</h3>
 					{/if}
 					{#each themes as theme (theme)}

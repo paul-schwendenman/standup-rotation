@@ -9,6 +9,8 @@ export interface Setting {
 	duration: string;
 	showTimer: boolean;
 	names: Person[];
+	// The team's custom theme as daisyUI theme CSS; applies for anyone who hasn't picked their own.
+	theme?: string;
 }
 
 export const themes = [

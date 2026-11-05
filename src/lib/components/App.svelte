@@ -69,6 +69,6 @@
 		>
 			Settings
 		</label>
-		<ThemeSelector>Theme</ThemeSelector>
+		<ThemeSelector {settings}>Theme</ThemeSelector>
 	</div>
 </footer>

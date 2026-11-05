@@ -113,3 +113,46 @@ test('removing the active custom theme falls back to the default', async ({ page
 	await page.reload();
 	await expect(htmlTheme(page)).not.toHaveAttribute('data-theme', /custom-/);
 });
+
+test('a team theme in the link applies unless the viewer picked their own', async ({
+	page,
+	browser
+}) => {
+	await page.goto('/');
+	await openCreate(page);
+	await page.getByLabel('Theme CSS').fill(themeCss('harbor-night'));
+	await page.getByRole('tab', { name: 'Themes' }).click();
+	await page.getByRole('button', { name: 'Use harbor-night for this team' }).click();
+	await expect(page.getByRole('heading', { name: 'Team' })).toBeVisible();
+	const teamLink = page.url();
+
+	// A teammate with no theme of their own gets the team theme.
+	const teammate = await (await browser.newContext()).newPage();
+	await teammate.goto(teamLink);
+	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'team');
+
+	// Picking a theme wins over the team theme, including after a reload.
+	await teammate.getByRole('button', { name: 'Theme' }).click();
+	await teammate.getByRole('button', { name: 'dracula' }).click();
+	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'dracula');
+	await teammate.reload();
+	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'dracula');
+
+	// Un-picking it goes back to the team theme.
+	await teammate.getByRole('button', { name: 'Theme' }).click();
+	await teammate.getByRole('button', { name: 'dracula' }).click();
+	await expect(htmlTheme(teammate)).toHaveAttribute('data-theme', 'team');
+});
+
+test('stopping the team theme removes it from the link', async ({ page }) => {
+	await page.goto('/');
+	await openCreate(page);
+	await page.getByLabel('Theme CSS').fill(themeCss('harbor-night'));
+	await page.getByRole('tab', { name: 'Themes' }).click();
+	await page.getByRole('button', { name: 'Use harbor-night for this team' }).click();
+	const withTeam = page.url();
+
+	await page.getByRole('button', { name: 'Stop using harbor-night for this team' }).click();
+	await expect(page.getByRole('heading', { name: 'Team' })).toHaveCount(0);
+	expect(page.url()).not.toBe(withTeam);
+});

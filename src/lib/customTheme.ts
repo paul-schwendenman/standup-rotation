@@ -15,6 +15,10 @@ export interface ParseResult {
 
 export type CustomThemeId = `custom-${string}`;
 
+// The team theme shared in the page link. Never collides with built-in or custom-* ids.
+export const TEAM_THEME_ID = 'team';
+export type TeamThemeId = typeof TEAM_THEME_ID;
+
 const STORAGE_KEY = 'customThemes';
 const CSS_CACHE_KEY = 'customThemesCss';
 const STYLE_ID = 'custom-themes';
@@ -148,16 +152,25 @@ export function parseTheme(source: string): ParseResult {
 	return { theme: { name, colorScheme: scheme ?? 'light', vars, source }, errors, warnings };
 }
 
-export function themeCss(themes: CustomTheme[]): string {
-	return themes
-		.map((theme) => {
-			const id = themeId(theme.name);
-			const decls = Object.entries(theme.vars)
-				.map(([key, value]) => `${key}: ${value};`)
-				.join(' ');
-			return `:root[data-theme="${id}"], [data-theme="${id}"] { color-scheme: ${theme.colorScheme}; ${decls} }`;
-		})
+function themeRule(id: string, theme: CustomTheme): string {
+	const decls = Object.entries(theme.vars)
+		.map(([key, value]) => `${key}: ${value};`)
+		.join(' ');
+	return `:root[data-theme="${id}"], [data-theme="${id}"] { color-scheme: ${theme.colorScheme}; ${decls} }`;
+}
+
+export function themeCss(themes: CustomTheme[], teamTheme: CustomTheme | null = null): string {
+	const rules = themes.map((theme) => themeRule(themeId(theme.name), theme));
+	if (teamTheme) rules.push(themeRule(TEAM_THEME_ID, teamTheme));
+	return rules.join('\n');
+}
+
+// A compact, canonical daisyUI theme block: drops whatever chatter surrounded the original paste.
+export function toSource(theme: CustomTheme): string {
+	const decls = Object.entries(theme.vars)
+		.map(([key, value]) => `  ${key}: ${value};`)
 		.join('\n');
+	return `@plugin "daisyui/theme" {\n  name: "${theme.name}";\n  color-scheme: ${theme.colorScheme};\n${decls}\n}`;
 }
 
 // Re-parse stored themes so hand-edited localStorage can't inject arbitrary CSS.
@@ -177,14 +190,14 @@ export function saveCustomThemes(themes: CustomTheme[]) {
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(themes));
 }
 
-export function injectCustomThemes(themes: CustomTheme[]) {
+export function injectCustomThemes(themes: CustomTheme[], teamTheme: CustomTheme | null = null) {
 	let style = document.getElementById(STYLE_ID);
 	if (!style) {
 		style = document.createElement('style');
 		style.id = STYLE_ID;
 		document.head.appendChild(style);
 	}
-	style.textContent = themeCss(themes);
+	style.textContent = themeCss(themes, teamTheme);
 
 	// app.html injects this cached copy before the app loads, to avoid a flash of the default theme.
 	localStorage.setItem(CSS_CACHE_KEY, style.textContent);

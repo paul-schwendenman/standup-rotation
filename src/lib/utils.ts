@@ -1,5 +1,5 @@
 import type { Theme } from './types';
-import type { CustomThemeId } from './customTheme';
+import type { CustomThemeId, TeamThemeId } from './customTheme';
 
 export function shuffle<T>(array: T[]): T[] {
 	let currentIndex = array.length,
@@ -22,6 +22,10 @@ export const loadTheme = (): Theme | CustomThemeId | null => {
 	}
 
 	return theme;
+};
+
+export const applyTheme = (theme: Theme | CustomThemeId | TeamThemeId | '') => {
+	document.documentElement.setAttribute('data-theme', theme);
 };
 
 export const setTheme = (theme: Theme | CustomThemeId | '') => {

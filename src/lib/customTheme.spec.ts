@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { colorVars, parseTheme, themeCss } from './customTheme';
+import { colorVars, parseTheme, themeCss, toSource } from './customTheme';
 
 const validTheme = `Sure! Here is your theme:
 
@@ -94,5 +94,23 @@ describe('themeCss', () => {
 		expect(css).toContain(':root[data-theme="custom-standup-night"]');
 		expect(css).toContain('color-scheme: dark;');
 		expect(css).toContain('--color-primary: oklch(30% 0.05 200);');
+	});
+
+	it('adds the team theme under its own id', () => {
+		const { theme } = parseTheme(validTheme);
+		const css = themeCss([], theme);
+
+		expect(css).toContain(':root[data-theme="team"]');
+		expect(css).not.toContain('custom-');
+	});
+});
+
+describe('toSource', () => {
+	it('round-trips through parseTheme without the surrounding chatter', () => {
+		const { theme } = parseTheme(validTheme);
+		const source = toSource(theme!);
+
+		expect(source).not.toContain('Sure!');
+		expect(parseTheme(source).theme).toEqual({ ...theme, source });
 	});
 });
