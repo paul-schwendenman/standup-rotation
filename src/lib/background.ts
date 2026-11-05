@@ -163,14 +163,3 @@ export function backgroundDecls(background: ThemeBackground): string {
 		`mask: ${url} ${position} / ${size} ${repeat};`
 	].join(' ');
 }
-
-export const tilePrompt = `Make a seamless tiling SVG pattern of [snowflakes].
-Rules: one <svg> element with a viewBox (e.g. 0 0 48 48); one color (#000);
-shapes that wrap cleanly at the edges; no text, scripts, images or links; under 2 KB.
-Reply with ONLY the SVG.`;
-
-export const fullPrompt = `Make a full-screen background illustration as an SVG of [snowy hills under a night sky].
-Rules: one <svg> element with viewBox="0 0 1600 900"; keep the main shapes near the
-[bottom] edge and leave the middle calm so text stays readable; one color (#000),
-using fill-opacity for lighter areas; no text, scripts, images or links; under 16 KB.
-Reply with ONLY the SVG.`;

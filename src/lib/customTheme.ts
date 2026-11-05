@@ -4,6 +4,7 @@ import {
 	defaultBackground,
 	isShareable,
 	parseBackground,
+	type Layout,
 	type ThemeBackground
 } from './background';
 import { contrastRatio } from './contrast';
@@ -179,18 +180,24 @@ export function parseTheme(source: string): ParseResult {
 	return { theme: { name, colorScheme: scheme ?? 'light', vars, source }, errors, warnings };
 }
 
-// A paste can hold a theme block and an <svg> background together (the one-step AI prompt asks for both).
-export function parseLook(text: string): {
+// A paste can hold a theme block, an <svg> background, or both; whatever is there applies.
+export function parseLook(
+	text: string,
+	layout: Layout = 'tile'
+): {
 	result: ParseResult;
 	background: { svg: string | null; errors: string[] } | null;
 } {
 	const svgMatch = text.match(/<svg[\s>][\s\S]*?<\/svg>/i);
-	const result = parseTheme(svgMatch ? text.replace(svgMatch[0], '') : text);
-	return { result, background: svgMatch ? checkSvg(svgMatch[0], 'tile') : null };
+	const rest = svgMatch ? text.replace(svgMatch[0], '') : text;
+	// A reply that's only an SVG has no theme in it, rather than a theme missing every color.
+	const hasTheme = /--color-[a-z0-9-]+\s*:/i.test(rest);
+	const result = hasTheme ? parseTheme(rest) : { theme: null, errors: [], warnings: [] };
+	return { result, background: svgMatch ? checkSvg(svgMatch[0], layout) : null };
 }
 
-export const pastedBackground = (svg: string): ThemeBackground => ({
-	...defaultBackground('dots'),
+export const pastedBackground = (svg: string, layout: Layout = 'tile'): ThemeBackground => ({
+	...defaultBackground(layout === 'full' ? 'hills' : 'dots'),
 	pattern: 'custom',
 	svg
 });
@@ -295,18 +302,15 @@ export function injectCustomThemes(
 	localStorage.setItem(CSS_CACHE_KEY, style.textContent);
 }
 
-export const DESCRIBE_PLACEHOLDER = 'calm dark navy with a warm amber accent and soft snowflakes';
+export type CreateKind = 'both' | 'theme' | 'background';
 
-// One prompt, one reply: the theme block plus a matching tiled background.
-export const lookPrompt = (
-	description: string
-) => `Create a daisyUI v5 custom theme and a matching background pattern
-for a stand-up meeting timer app.
-The look I want: ${description.trim() || `[describe it, e.g. "${DESCRIBE_PLACEHOLDER}"]`}.
+export const describePlaceholder: Record<CreateKind, string> = {
+	both: 'calm dark navy with a warm amber accent and soft snowflakes',
+	theme: 'calm dark navy with a warm amber accent',
+	background: 'soft snowflakes'
+};
 
-Reply with exactly two code blocks and nothing else.
-
-1. The theme, in this format:
+const themeSpec = `The theme, in this format:
 @plugin "daisyui/theme" {
   name: "...";
   color-scheme: light; /* or dark */
@@ -320,9 +324,29 @@ Reply with exactly two code blocks and nothing else.
 }
 Give it a short, lowercase name that describes it (e.g. "harbor-night"),
 not "my-theme". Use oklch() colors, include every variable, and make each
-*-content color readable on its pair (WCAG AA).
+*-content color readable on its pair (WCAG AA).`;
 
-2. A seamless tiling SVG pattern that fits the look.
+const patternSpec = `A seamless tiling SVG pattern.
 Rules: one <svg> element with a viewBox (e.g. 0 0 48 48); one color (#000);
 sparse, small shapes that wrap cleanly at the edges; no text, scripts, images
-or links; under 2 KB.`;
+or links; under 2 KB so it can be shared in a link.`;
+
+const illustrationSpec = `A full-screen background illustration as an SVG.
+Rules: one <svg> element with viewBox="0 0 1600 900"; keep the main shapes near
+the bottom edge and leave the middle calm so text stays readable; one color
+(#000), using fill-opacity for lighter areas; no text, scripts, images or links;
+under 16 KB.`;
+
+// One prompt for whatever is being made; the reply goes into the same paste box either way.
+export function createPrompt(kind: CreateKind, layout: Layout, description: string): string {
+	const look = description.trim() || `[describe it, e.g. "${describePlaceholder[kind]}"]`;
+	const intro = 'for a stand-up meeting timer app.';
+	if (kind === 'theme') {
+		return `Create a daisyUI v5 custom theme ${intro}\nThe look I want: ${look}.\n\nReply with ONLY one CSS code block.\n\n${themeSpec}`;
+	}
+	const art = layout === 'full' ? illustrationSpec : patternSpec;
+	if (kind === 'background') {
+		return `Create a background ${intro}\nWhat it shows: ${look}.\n\nReply with ONLY the SVG.\n\n${art}`;
+	}
+	return `Create a daisyUI v5 custom theme and a matching background ${intro}\nThe look I want: ${look}.\n\nReply with exactly two code blocks and nothing else.\n\n1. ${themeSpec}\n\n2. ${art}`;
+}

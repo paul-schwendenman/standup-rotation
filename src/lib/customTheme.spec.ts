@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { defaultBackground } from './background';
 import {
 	colorVars,
+	createPrompt,
 	parseLook,
 	parseTeamSetting,
 	parseTheme,
@@ -199,6 +200,20 @@ describe('parseLook', () => {
 		expect(background?.svg).toContain('<circle');
 	});
 
+	it('reads a reply that is only an SVG as a background, not a broken theme', () => {
+		const { result, background } = parseLook('Here:\n<svg viewBox="0 0 48 48"><rect/></svg>');
+
+		expect(result).toEqual({ theme: null, errors: [], warnings: [] });
+		expect(background?.svg).toContain('<rect');
+	});
+
+	it('checks the SVG against the chosen layout', () => {
+		const big = `<svg viewBox="0 0 1 1">${'<rect x="1" y="2" width="3" height="4"/>'.repeat(300)}</svg>`;
+
+		expect(parseLook(big, 'tile').background?.svg).toBeNull();
+		expect(parseLook(big, 'full').background?.svg).toContain('<rect');
+	});
+
 	it('has no background when the reply is only a theme', () => {
 		expect(parseLook(validTheme).background).toBeNull();
 	});
@@ -211,5 +226,23 @@ describe('parseLook', () => {
 		expect(result.theme).not.toBeNull();
 		expect(background?.svg).toBeNull();
 		expect(background?.errors).toContain("Scripts and event handlers aren't allowed.");
+	});
+});
+
+describe('createPrompt', () => {
+	it('asks for what is being made, with the description filled in', () => {
+		const both = createPrompt('both', 'tile', 'snowy cabin');
+		expect(both).toContain('The look I want: snowy cabin.');
+		expect(both).toContain('@plugin "daisyui/theme"');
+		expect(both).toContain('seamless tiling SVG');
+
+		const theme = createPrompt('theme', 'tile', '');
+		expect(theme).toContain('@plugin "daisyui/theme"');
+		expect(theme).not.toContain('<svg>');
+		expect(theme).toContain('[describe it');
+
+		const illustration = createPrompt('background', 'full', 'hills');
+		expect(illustration).not.toContain('@plugin');
+		expect(illustration).toContain('viewBox="0 0 1600 900"');
 	});
 });

@@ -7,15 +7,22 @@
 	import type { Writable } from 'svelte/store';
 	import { applyTheme, setTheme, loadTheme } from '../utils';
 	import { themes, type Setting, type Theme } from '#lib/types.ts';
-	import { isShareable, presets, type ThemeBackground } from '#lib/background.ts';
 	import {
-		DESCRIBE_PLACEHOLDER,
+		SHARE_MAX_BYTES,
+		isShareable,
+		presets,
+		svgBytes,
+		type Layout,
+		type ThemeBackground
+	} from '#lib/background.ts';
+	import {
 		TEAM_THEME_ID,
+		createPrompt,
+		describePlaceholder,
 		injectCustomThemes,
 		isCustomThemeId,
 		loadBackground,
 		loadCustomThemes,
-		lookPrompt,
 		parseLook,
 		parseTeamSetting,
 		pastedBackground,
@@ -23,6 +30,7 @@
 		saveCustomThemes,
 		themeId,
 		toTeamSetting,
+		type CreateKind,
 		type CustomTheme,
 		type CustomThemeId,
 		type TeamThemeId
@@ -45,16 +53,49 @@
 	let sourceEl: HTMLTextAreaElement;
 	const dispatch = createEventDispatcher<{ open: void }>();
 
+	// What Create is making. It only shapes the prompt: whatever the pasted reply holds applies.
+	let kind: CreateKind = 'both';
+	let style: Layout = 'tile';
 	let description = '';
 	let source = '';
+	// The last background made with Create, kept as a tile so picking a preset doesn't lose it.
+	let yours: ThemeBackground | null = null;
 	// The theme this Create session is saving to, so edits to it aren't reported as replacing it.
 	let sessionName: string | null = null;
 	let replaced: string | null = null;
 
+	const kinds: [CreateKind, string][] = [
+		['both', 'Both'],
+		['theme', 'Theme'],
+		['background', 'Background']
+	];
+	const styles: [Layout, string][] = [
+		['tile', 'Pattern'],
+		['full', 'Illustration']
+	];
+	const kindHelp: Record<CreateKind, string> = {
+		both: 'Colors and a matching background from one prompt.',
+		theme: 'Just the colors. Your background stays as it is.',
+		background: 'Just a background. It works with any theme.'
+	};
+	const pastePlaceholder: Record<CreateKind, string> = {
+		both: '@plugin "daisyui/theme" { … }\n<svg viewBox="0 0 48 48">…</svg>',
+		theme: '@plugin "daisyui/theme" { … }',
+		background: '<svg viewBox="0 0 48 48">…</svg>'
+	};
+	const missingHelp: Record<CreateKind, string> = {
+		both: 'Paste the whole reply, including the @plugin "daisyui/theme" block and the <svg>.',
+		theme: 'Paste the whole reply, including the @plugin "daisyui/theme" block.',
+		background: 'Paste the whole reply, including the <svg>…</svg> part.'
+	};
+	const formatKb = (bytes: number) => `${(bytes / 1024).toFixed(1)} KB`;
+
 	let teamThemeId: Theme | TeamThemeId | '';
 	let shownTheme: Theme | CustomThemeId | TeamThemeId | '';
 
-	$: ({ result, background: pasted } = parseLook(source));
+	$: pasteLayout = kind === 'background' ? style : ('tile' as Layout);
+	$: ({ result, background: pasted } = parseLook(source, pasteLayout));
+	$: if (shownBackground?.pattern === 'custom') yours = shownBackground;
 	$: team = parseTeamSetting($settings.theme);
 	$: teamThemeId = team?.builtIn ?? (team?.custom ? TEAM_THEME_ID : '');
 	$: shownTheme = currentTheme || teamThemeId;
@@ -135,26 +176,33 @@
 	const handleSourceInput = () => {
 		if (source.trim() === '') sessionName = null;
 
-		const { result, background: pasted } = parseLook(source);
+		const { result, background: pasted } = parseLook(source, pasteLayout);
 		const theme = result.theme;
-		if (!theme) return;
 
-		if (theme.name !== sessionName) {
-			replaced = customThemes.some((t) => t.name === theme.name) ? theme.name : null;
-			sessionName = theme.name;
+		if (theme) {
+			if (theme.name !== sessionName) {
+				replaced = customThemes.some((t) => t.name === theme.name) ? theme.name : null;
+				sessionName = theme.name;
+			}
+
+			storeCustomThemes([...customThemes.filter((t) => t.name !== theme.name), theme]);
+			setTheme(themeId(theme.name));
+			currentTheme = themeId(theme.name);
 		}
 
-		storeCustomThemes([...customThemes.filter((t) => t.name !== theme.name), theme]);
-		setTheme(themeId(theme.name));
-		currentTheme = themeId(theme.name);
-
-		// Only on a new SVG, so typing in the box doesn't undo tweaks made since the paste.
-		if (pasted?.svg && background?.svg !== pasted.svg) {
-			storeBackground(pastedBackground(pasted.svg));
+		// Only on a new SVG or style, so typing in the box doesn't undo tweaks made since the paste.
+		if (pasted?.svg && (background?.svg !== pasted.svg || background?.layout !== pasteLayout)) {
+			storeBackground(pastedBackground(pasted.svg, pasteLayout));
 		}
 	};
 
-	const handleCreate = () => {
+	const setStyle = (next: Layout) => {
+		style = next;
+		handleSourceInput();
+	};
+
+	const handleCreate = (next: CreateKind) => {
+		kind = next;
 		source = '';
 		sessionName = null;
 		replaced = null;
@@ -162,6 +210,7 @@
 	};
 
 	const handleEditCustom = (theme: CustomTheme) => {
+		kind = 'theme';
 		source = theme.source;
 		sessionName = theme.name;
 		replaced = null;
@@ -213,7 +262,7 @@
 	<Sheet
 		bind:this={sheet}
 		id="theme-sheet"
-		title={view === 'create' ? 'Create a theme' : 'Theme'}
+		title={view === 'create' ? 'Create your own' : 'Theme'}
 		showFooter={view === 'look'}
 		on:close={closeSheet}
 	>
@@ -265,7 +314,7 @@
 					<h3 id="theme-title" class="text-xs font-bold tracking-wider uppercase opacity-70">
 						Theme
 					</h3>
-					<button class="btn w-full" on:click={handleCreate}>
+					<button class="btn w-full" on:click={() => handleCreate('both')}>
 						<svg
 							class="size-4"
 							viewBox="0 0 24 24"
@@ -336,15 +385,41 @@
 
 				<BackgroundEditor
 					background={shownBackground}
+					{yours}
 					on:change={(e) => storeBackground(e.detail)}
+					on:create={() => handleCreate('background')}
 				/>
 			</div>
 		{:else}
 			<div class="flex flex-col gap-6">
-				<p>
-					One prompt gets you colors and a matching background. Paste the reply and both apply right
-					away.
-				</p>
+				<div class="flex flex-col gap-2">
+					<span id="create-kind" class="font-semibold">What to make</span>
+					<div role="radiogroup" aria-labelledby="create-kind" class="join grid grid-cols-3">
+						{#each kinds as [value, label] (value)}
+							<button
+								role="radio"
+								aria-checked={kind === value}
+								class="btn join-item"
+								class:btn-active={kind === value}
+								on:click={() => (kind = value)}>{label}</button
+							>
+						{/each}
+					</div>
+					{#if kind === 'background'}
+						<div role="radiogroup" aria-label="Background style" class="join grid grid-cols-2">
+							{#each styles as [value, label] (value)}
+								<button
+									role="radio"
+									aria-checked={style === value}
+									class="btn join-item"
+									class:btn-active={style === value}
+									on:click={() => setStyle(value)}>{label}</button
+								>
+							{/each}
+						</div>
+					{/if}
+					<span class="text-sm opacity-75">{kindHelp[kind]}</span>
+				</div>
 
 				<label class="flex flex-col gap-1">
 					<span class="font-semibold">Describe the look</span>
@@ -352,14 +427,14 @@
 						bind:this={describeEl}
 						bind:value={description}
 						class="input w-full"
-						placeholder={DESCRIBE_PLACEHOLDER}
+						placeholder={describePlaceholder[kind]}
 					/>
 				</label>
 
 				<div class="flex flex-col gap-2">
 					<span class="font-semibold">Ask an AI</span>
 					<div class="flex flex-wrap items-center gap-3">
-						<CopyButton text={lookPrompt(description)} label="Copy prompt" />
+						<CopyButton text={createPrompt(kind, style, description)} label="Copy prompt" />
 						<span class="text-sm opacity-75">Paste it into ChatGPT, Claude or similar.</span>
 					</div>
 				</div>
@@ -371,42 +446,26 @@
 						bind:value={source}
 						on:input={handleSourceInput}
 						class="textarea h-44 w-full font-mono text-xs whitespace-pre"
-						class:textarea-error={result.errors.length > 0}
+						class:textarea-error={result.errors.length > 0 || (pasted && !pasted.svg)}
 						wrap="off"
 						spellcheck="false"
-						placeholder={'@plugin "daisyui/theme" { … }\n<svg viewBox="0 0 48 48">…</svg>'}
-					></textarea>
+						placeholder={pastePlaceholder[kind]}></textarea>
 					<span class="text-sm opacity-75">
-						Extra text is ignored. A daisyUI theme on its own works too, from the
+						Extra text is ignored. A theme from the
 						<a
 							class="link"
 							href="https://daisyui.com/theme-generator/"
 							target="_blank"
-							rel="noreferrer">theme generator</a
-						>.
+							rel="noreferrer">daisyUI theme generator</a
+						> works too.
 					</span>
 				</label>
 
 				{#if source.trim() !== ''}
-					<div
-						role="status"
-						class="alert flex flex-col items-start gap-1 alert-soft"
-						class:alert-success={result.theme}
-						class:alert-error={!result.theme}
-					>
-						{#if result.theme}
-							<span class="font-semibold">Applied “{result.theme.name}”</span>
-							{#if replaced === result.theme.name}
-								<span>Replaced your earlier “{result.theme.name}” theme.</span>
-							{:else}
-								<span>Saved to your themes.</span>
-							{/if}
-							{#if pasted?.svg}
-								<span>Background applied too.</span>
-							{/if}
-						{:else}
+					{#if result.errors.length > 0}
+						<div role="status" class="alert flex flex-col items-start gap-1 alert-soft alert-error">
 							<span class="font-semibold">
-								Not applied: {result.errors.length}
+								Theme not applied: {result.errors.length}
 								{result.errors.length === 1 ? 'problem' : 'problems'}
 							</span>
 							<ul class="list-disc pl-5">
@@ -414,19 +473,47 @@
 									<li>{error}</li>
 								{/each}
 							</ul>
-						{/if}
-					</div>
-				{/if}
+						</div>
+					{:else if result.theme || pasted?.svg}
+						<div
+							role="status"
+							class="alert flex flex-col items-start gap-1 alert-soft alert-success"
+						>
+							{#if result.theme}
+								<span class="font-semibold">Applied “{result.theme.name}”</span>
+								{#if replaced === result.theme.name}
+									<span>Replaced your earlier “{result.theme.name}” theme.</span>
+								{:else}
+									<span>Saved to your themes.</span>
+								{/if}
+							{/if}
+							{#if pasted?.svg}
+								{@const bytes = svgBytes(pasted.svg)}
+								<span class:font-semibold={!result.theme}>Background applied.</span>
+								<span>
+									{bytes <= SHARE_MAX_BYTES
+										? `Small enough to share with your team (${formatKb(bytes)}).`
+										: `Too big to share with your team (${formatKb(bytes)} of ${formatKb(SHARE_MAX_BYTES)} max). It only shows for you.`}
+								</span>
+							{/if}
+						</div>
+					{:else if !pasted}
+						<div role="status" class="alert flex flex-col items-start gap-1 alert-soft alert-error">
+							<span class="font-semibold">Nothing to apply yet</span>
+							<span>{missingHelp[kind]}</span>
+						</div>
+					{/if}
 
-				{#if pasted && !pasted.svg}
-					<div class="text-sm">
-						<p class="font-semibold">Background skipped</p>
-						<ul class="list-disc pl-5">
-							{#each pasted.errors as error (error)}
-								<li>{error}</li>
-							{/each}
-						</ul>
-					</div>
+					{#if pasted && !pasted.svg}
+						<div class="text-sm">
+							<p class="font-semibold">Background not applied</p>
+							<ul class="list-disc pl-5">
+								{#each pasted.errors as error (error)}
+									<li>{error}</li>
+								{/each}
+							</ul>
+						</div>
+					{/if}
 				{/if}
 
 				{#if result.warnings.length > 0}
@@ -437,7 +524,7 @@
 					</ul>
 				{/if}
 
-				{#if result.theme}
+				{#if result.theme || pasted?.svg}
 					<button class="btn self-start btn-neutral" on:click={showLook}>Done</button>
 				{/if}
 			</div>

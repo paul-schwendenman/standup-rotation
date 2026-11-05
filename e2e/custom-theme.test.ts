@@ -84,7 +84,7 @@ test('one reply with a theme and an SVG applies both', async ({ page }) => {
 	await page.goto('/');
 	await pasteTheme(page, `${themeCss('harbor-night')}\n\nAnd a pattern:\n${smallSvg}`);
 
-	await expect(page.getByRole('status')).toContainText('Background applied too.');
+	await expect(page.getByRole('status')).toContainText('Background applied.');
 	await expect(htmlTheme(page)).toHaveAttribute('data-theme', 'custom-harbor-night');
 	expect(await backgroundMask(page)).toContain('rect');
 
@@ -100,7 +100,7 @@ test('a bad SVG in the reply is skipped but the colors still apply', async ({ pa
 	);
 
 	await expect(page.getByRole('status')).toContainText('Applied “harbor-night”');
-	await expect(page.getByText('Background skipped')).toBeVisible();
+	await expect(page.getByText('Background not applied')).toBeVisible();
 	await expect(page.getByText("Scripts and event handlers aren't allowed.")).toBeVisible();
 	expect(await backgroundMask(page)).toBe('none');
 });
@@ -109,7 +109,7 @@ test('an invalid paste lists problems and is not applied', async ({ page }) => {
 	await page.goto('/');
 	await pasteTheme(page, themeCss('broken').replace(/.*--color-info-content.*\n/, ''));
 
-	await expect(page.getByRole('status')).toContainText('Not applied: 1 problem');
+	await expect(page.getByRole('status')).toContainText('Theme not applied: 1 problem');
 	await expect(page.getByRole('status')).toContainText('Missing --color-info-content');
 	await expect(htmlTheme(page)).not.toHaveAttribute('data-theme', /custom-/);
 });
@@ -257,20 +257,40 @@ test('a team link saved before backgrounds still applies its theme', async ({ pa
 	await expect(htmlTheme(fresh)).toHaveAttribute('data-theme', 'team');
 });
 
-async function useCustomSvg(page: Page, svg: string, layout: 'Tile' | 'Full screen') {
+async function createBackground(page: Page, svg: string, style: 'Pattern' | 'Illustration') {
 	await page.goto('/');
 	await themeButton(page).click();
-	await page.getByRole('radio', { name: 'Hills' }).click();
-	await page.getByText('Adjust background').click();
-	await page.getByRole('radio', { name: layout }).click();
-	await page.getByText('Use your own SVG').click();
-	await page.getByLabel('Pattern SVG').fill(svg);
-	expect(await backgroundMask(page)).toContain('rect');
+	await page.getByRole('button', { name: 'Create a background' }).click();
+	await expect(page.getByRole('radio', { name: 'Background', exact: true })).toBeChecked();
+	await page.getByRole('radio', { name: style }).click();
+	await pasteBox(page).fill(svg);
 }
 
+test('a background-only reply applies and becomes your own tile', async ({ page }) => {
+	await createBackground(page, `Here you go:\n${smallSvg}`, 'Pattern');
+	await expect(page.getByRole('status')).toContainText('Background applied.');
+	await expect(page.getByRole('status')).toContainText('Small enough to share with your team');
+	expect(await backgroundMask(page)).toContain('rect');
+
+	await page.getByRole('button', { name: 'Done' }).click();
+	await expect(page.getByRole('radio', { name: 'Yours' })).toBeChecked();
+
+	// Picking a preset keeps yours one click away.
+	await page.getByRole('radio', { name: 'Snow' }).click();
+	expect(await backgroundMask(page)).not.toContain('rect');
+	await page.getByRole('radio', { name: 'Yours' }).click();
+	expect(await backgroundMask(page)).toContain('rect');
+});
+
+test('a reply with nothing usable says what to paste', async ({ page }) => {
+	await createBackground(page, 'Sorry, I cannot draw that.', 'Pattern');
+	await expect(page.getByRole('status')).toContainText('Nothing to apply yet');
+	await expect(page.getByRole('status')).toContainText('<svg>…</svg>');
+});
+
 test('a small custom SVG is shared with the team', async ({ page, browser }) => {
-	await useCustomSvg(page, smallSvg, 'Tile');
-	await expect(page.getByText('Small enough to share with your team')).toBeVisible();
+	await createBackground(page, smallSvg, 'Pattern');
+	await page.getByRole('button', { name: 'Done' }).click();
 	await shareWithTeam(page);
 
 	const teammate = await teammateAt(page, browser);
@@ -279,8 +299,9 @@ test('a small custom SVG is shared with the team', async ({ page, browser }) => 
 
 test('a big custom SVG stays personal', async ({ page, browser }) => {
 	const big = `<svg viewBox="0 0 100 100">${'<rect x="1" y="2" width="3" height="4"/>'.repeat(80)}</svg>`;
-	await useCustomSvg(page, big, 'Full screen');
+	await createBackground(page, big, 'Illustration');
 	await expect(page.getByText('Too big to share with your team')).toBeVisible();
+	await page.getByRole('button', { name: 'Done' }).click();
 	await themeCard(page, 'dracula').click();
 	await expect(page.getByText('Your background is too big to share.')).toBeVisible();
 	await shareWithTeam(page);
@@ -291,11 +312,9 @@ test('a big custom SVG stays personal', async ({ page, browser }) => {
 });
 
 test('an unsafe SVG is rejected', async ({ page }) => {
-	await page.goto('/');
-	await themeButton(page).click();
-	await page.getByText('Use your own SVG').click();
-	await page.getByLabel('Pattern SVG').fill('<svg viewBox="0 0 1 1" onload="alert(1)"></svg>');
+	await createBackground(page, '<svg viewBox="0 0 1 1" onload="alert(1)"></svg>', 'Pattern');
 
+	await expect(page.getByText('Background not applied')).toBeVisible();
 	await expect(page.getByText("Scripts and event handlers aren't allowed.")).toBeVisible();
 	expect(await backgroundMask(page)).toBe('none');
 });

@@ -1,35 +1,28 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import CopyButton from './CopyButton.svelte';
 	import {
-		SHARE_MAX_BYTES,
 		SIZE,
 		STRENGTH,
 		checkSvg,
 		defaultBackground,
-		fullPrompt,
 		presetIds,
 		presets,
-		svgBytes,
 		svgUrl,
-		tilePrompt,
 		type Layout,
 		type PresetId,
 		type ThemeBackground
 	} from '#lib/background.ts';
 
 	export let background: ThemeBackground | null;
+	// The last background made with Create, so picking a preset doesn't lose it.
+	export let yours: ThemeBackground | null = null;
 
-	const dispatch = createEventDispatcher<{ change: ThemeBackground | null }>();
+	const dispatch = createEventDispatcher<{ change: ThemeBackground | null; create: void }>();
 
-	let svgText = background?.pattern === 'custom' ? (background.svg ?? '') : '';
 	let layoutError = '';
-	let customOpen = background?.pattern === 'custom';
 	let adjustOpen = false;
-	const svgPlaceholder = '<svg viewBox="0 0 40 40">…</svg>';
 
 	$: layout = background?.layout ?? 'tile';
-	$: svgCheck = svgText.trim() ? checkSvg(svgText, layout) : null;
 
 	const update = (patch: Partial<ThemeBackground>) => {
 		if (background) dispatch('change', { ...background, ...patch });
@@ -45,13 +38,6 @@
 		dispatch('change', { ...base, pattern: id, layout: presets[id].layout, svg: undefined });
 	};
 
-	const handleSvgInput = () => {
-		const { svg } = checkSvg(svgText, layout);
-		if (!svg) return;
-		layoutError = '';
-		dispatch('change', { ...(background ?? defaultBackground('dots')), pattern: 'custom', svg });
-	};
-
 	const setLayout = (next: Layout) => {
 		layoutError = '';
 		if (background?.pattern === 'custom' && !checkSvg(background.svg ?? '', next).svg) {
@@ -61,8 +47,6 @@
 		update({ layout: next });
 	};
 
-	const formatKb = (bytes: number) => `${(bytes / 1024).toFixed(1)} KB`;
-
 	const tileSize = (id: PresetId) => (presets[id].layout === 'full' ? 'cover' : '18px 18px');
 	const tileRepeat = (id: PresetId) => (presets[id].layout === 'full' ? 'no-repeat' : 'repeat');
 </script>
@@ -71,6 +55,18 @@
 	<h3 id="background-title" class="text-xs font-bold tracking-wider uppercase opacity-70">
 		Background
 	</h3>
+	<button class="btn w-full" on:click={() => dispatch('create')}>
+		<svg
+			class="size-4"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg
+		>
+		Create a background
+	</button>
 	<div role="radiogroup" aria-label="Background pattern" class="grid grid-cols-3 gap-3">
 		<button
 			role="radio"
@@ -104,49 +100,29 @@
 				{presets[id].label}
 			</button>
 		{/each}
+		{#if yours}
+			<button
+				role="radio"
+				aria-checked={background?.pattern === 'custom'}
+				class="flex flex-col items-center gap-1 text-sm"
+				on:click={() => dispatch('change', yours)}
+			>
+				<span
+					class="relative block aspect-[16/10] w-full overflow-hidden rounded-field bg-base-100 outline-offset-1 outline-primary"
+					class:outline-2={background?.pattern === 'custom'}
+				>
+					<span
+						class="absolute inset-0 bg-base-content/50"
+						style:mask="{svgUrl(yours.svg ?? '')} center bottom / {yours.layout === 'full'
+							? 'cover'
+							: '18px 18px'}
+						{yours.layout === 'full' ? 'no-repeat' : 'repeat'}"
+					></span>
+				</span>
+				Yours
+			</button>
+		{/if}
 	</div>
-
-	<details class="rounded-box bg-base-100 p-3 text-sm" bind:open={customOpen}>
-		<summary class="cursor-pointer font-semibold">Use your own SVG</summary>
-		<p class="mt-2">
-			{layout === 'full'
-				? 'Ask an AI for a full-screen illustration, then paste the SVG.'
-				: 'Ask an AI for a small seamless pattern, then paste the SVG.'}
-			SVGs up to {SHARE_MAX_BYTES / 1024} KB are shared with your team too; bigger ones only show for
-			you.
-		</p>
-		<div class="mt-2 flex flex-wrap items-center gap-2">
-			<CopyButton
-				text={layout === 'full' ? fullPrompt : tilePrompt}
-				label={layout === 'full' ? 'Copy illustration prompt' : 'Copy pattern prompt'}
-			/>
-		</div>
-		<label class="mt-2 flex flex-col gap-1">
-			<span class="font-semibold">Pattern SVG</span>
-			<textarea
-				bind:value={svgText}
-				on:input={handleSvgInput}
-				class="textarea h-24 w-full font-mono text-xs"
-				class:textarea-error={svgCheck && !svgCheck.svg}
-				spellcheck="false"
-				placeholder={svgPlaceholder}></textarea>
-		</label>
-		{#if svgCheck?.svg}
-			{@const bytes = svgBytes(svgCheck.svg)}
-			<p class="mt-2 text-xs" class:text-success={bytes <= SHARE_MAX_BYTES}>
-				{bytes <= SHARE_MAX_BYTES
-					? `✓ Small enough to share with your team (${formatKb(bytes)}).`
-					: `Too big to share with your team (${formatKb(bytes)} of ${formatKb(SHARE_MAX_BYTES)} max). It will only show for you.`}
-			</p>
-		{/if}
-		{#if svgCheck && !svgCheck.svg}
-			<ul class="mt-2 list-disc pl-5 text-xs text-error">
-				{#each svgCheck.errors as error (error)}
-					<li>{error}</li>
-				{/each}
-			</ul>
-		{/if}
-	</details>
 
 	{#if background}
 		<details class="rounded-box bg-base-100 p-3 text-sm" bind:open={adjustOpen}>
